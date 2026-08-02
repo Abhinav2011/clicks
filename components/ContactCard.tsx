@@ -136,16 +136,11 @@ const ContactCard = forwardRef<HTMLElement>(function ContactCard(_, ref) {
               <span className="font-serif text-xl font-bold text-amber">AK</span>
             </div>
 
-            <h2 className="font-serif text-3xl font-bold italic mb-1">
+            <h2 className="font-serif text-3xl font-bold italic mb-4">
               Abhinav Kumar
             </h2>
-            <p className="text-[0.65rem] uppercase tracking-[0.15em] text-paper/50 mb-4 font-sans">
-              Photographer · Developer
-            </p>
             <p className="text-paper/70 text-sm leading-relaxed mb-8">
-              I capture moments through Fujifilm glass — street scenes, 
-              landscapes, and quiet everyday beauty. Film simulations 
-              are my darkroom.
+              Amateur photographer documenting places, people, and everyday moments. Learning with a Fujifilm.
             </p>
 
             {/* Social links — flat square buttons */}
