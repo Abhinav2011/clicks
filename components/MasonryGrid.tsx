@@ -80,13 +80,12 @@ export default function MasonryGrid({
           <button
             onClick={onLoadMore}
             disabled={loading}
-            className="px-8 py-2.5 border-2 border-ink text-ink font-sans text-xs font-semibold
-                       uppercase tracking-[0.1em]
-                       hover:bg-ink hover:text-paper
+            className="px-7 py-3 rounded-full border border-border bg-paper-alt text-ink font-sans text-xs font-semibold
+                       tracking-[0.04em]
+                       hover:bg-amber hover:text-paper hover:border-amber
                        transition-all duration-150
                        disabled:opacity-40 disabled:cursor-not-allowed
-                       hover:translate-x-[-2px] hover:translate-y-[-2px]
-                       hover:shadow-[4px_4px_0_var(--color-amber)]"
+                       hover:-translate-y-0.5"
           >
             {loading ? (
               <span className="flex items-center gap-2">

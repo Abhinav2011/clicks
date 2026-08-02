@@ -108,8 +108,8 @@ export default function PhotoModal({
         {/* Modal container */}
         <motion.div
           className="relative z-10 flex flex-col lg:flex-row w-full max-w-6xl max-h-[90vh]
-                     bg-paper border-2 border-ink overflow-hidden
-                     shadow-[8px_8px_0_var(--color-amber-dark)]"
+                     bg-paper border border-border rounded-2xl overflow-hidden
+                     shadow-[0_18px_48px_rgba(78,65,55,0.18)]"
           initial={{ scale: 0.97, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.97, opacity: 0 }}
@@ -267,8 +267,8 @@ export default function PhotoModal({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5
-                             border-2 border-ink bg-ink text-paper text-xs font-semibold uppercase tracking-[0.08em] font-sans
-                             hover:bg-paper hover:text-ink transition-all duration-150"
+                             rounded-full border border-amber bg-amber text-paper text-xs font-semibold uppercase tracking-[0.08em] font-sans
+                             hover:bg-amber-dark transition-all duration-150"
                 >
                   <Download size={14} strokeWidth={2} />
                   Download
@@ -276,7 +276,7 @@ export default function PhotoModal({
                 <button
                   onClick={handleShare}
                   className="flex items-center justify-center gap-2 px-4 py-2.5
-                             border-2 border-border text-ink-muted text-xs font-semibold uppercase tracking-[0.08em] font-sans
+                             rounded-full border border-border text-ink-muted text-xs font-semibold uppercase tracking-[0.08em] font-sans
                              hover:border-amber hover:text-amber-dark transition-all duration-150"
                 >
                   <Share2 size={14} strokeWidth={2} />

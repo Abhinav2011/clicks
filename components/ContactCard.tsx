@@ -115,9 +115,7 @@ const ContactCard = forwardRef<HTMLElement>(function ContactCard(_, ref) {
 
       {/* Card — flat vector, 2px border, offset shadow */}
       <div
-        className="border-2 border-ink overflow-hidden
-                    grid grid-cols-1 lg:grid-cols-5
-                    shadow-[6px_6px_0_var(--color-amber-dark)]"
+        className="contact-card overflow-hidden grid grid-cols-1 lg:grid-cols-5"
       >
         {/* ─── Left panel: Profile ─── */}
         <div
@@ -132,7 +130,7 @@ const ContactCard = forwardRef<HTMLElement>(function ContactCard(_, ref) {
           <div className="relative z-10">
             {/* Avatar — geometric square */}
             <div
-              className="w-14 h-14 border-2 border-amber flex items-center justify-center mb-6"
+              className="w-14 h-14 border border-amber rounded-2xl flex items-center justify-center mb-6"
             >
               {/* Simple face initials */}
               <span className="font-serif text-xl font-bold text-amber">AK</span>
@@ -244,7 +242,7 @@ const ContactCard = forwardRef<HTMLElement>(function ContactCard(_, ref) {
                 placeholder="Your message…"
                 className="w-full px-3 py-2.5 border border-border bg-paper-alt
                            text-ink text-sm placeholder:text-ink-muted/40 font-sans
-                           focus:outline-none focus:border-ink
+                           focus:outline-none focus:border-amber
                            transition-colors duration-150 resize-none"
               />
             </div>
@@ -254,9 +252,9 @@ const ContactCard = forwardRef<HTMLElement>(function ContactCard(_, ref) {
               type="submit"
               disabled={formStatus === "sending"}
               className="w-full flex items-center justify-center gap-2 px-6 py-3
-                         border-2 border-ink bg-ink text-paper
+                         rounded-full border border-amber bg-amber text-paper
                          text-xs font-semibold uppercase tracking-[0.1em] font-sans
-                         hover:bg-paper hover:text-ink
+                         hover:bg-amber-dark
                          disabled:opacity-50 disabled:cursor-not-allowed
                          transition-all duration-150"
               whileTap={{ scale: 0.99 }}
