@@ -4,7 +4,7 @@ import ContactCard from "@/components/ContactCard";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Contact — Clicks Fujifilm Photo Gallery",
+  title: "Contact — Still Frames Fujifilm Photo Gallery",
   description:
     "Get in touch with the photographer. Send a message regarding photo prints, licensing, collaborations, or Fujifilm gear inquiries.",
 };

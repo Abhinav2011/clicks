@@ -16,13 +16,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const photo = await getPhotoById(id);
 
   if (!photo) {
-    return { title: "Photo Not Found — Clicks" };
+    return { title: "Photo Not Found — Still Frames" };
   }
 
-  const title = `${photo.title || "Photograph"} — Clicks Fujifilm Gallery`;
+  const title = `${photo.title || "Photograph"} — Still Frames Fujifilm Gallery`;
   const description =
     photo.description ||
-    `Shot on ${photo.camera || "Fujifilm"} with ${photo.film_simulation || "film simulation"}. Download full resolution on Clicks.`;
+    `Shot on ${photo.camera || "Fujifilm"} with ${photo.film_simulation || "film simulation"}. Download full resolution on Still Frames.`;
 
   return {
     title,
