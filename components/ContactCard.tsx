@@ -10,6 +10,24 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 
+function InstagramSVG() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="w-4 h-4 text-amber group-hover:scale-110 transition-transform flex-shrink-0"
+    >
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  );
+}
+
 const GEAR = [
   { name: "Fujifilm X-T30 II", type: "body" },
   { name: "iPhone 17", type: "body" },
@@ -139,9 +157,19 @@ const ContactCard = forwardRef<HTMLElement>(function ContactCard(_, ref) {
             <h2 className="font-serif text-3xl font-bold italic mb-4">
               Abhinav Kumar
             </h2>
-            <p className="text-paper/70 text-sm leading-relaxed mb-8">
+            <p className="text-paper/70 text-sm leading-relaxed mb-4">
               Amateur photographer documenting places, people, and everyday moments. Learning with a Fujifilm.
             </p>
+
+            <a
+              href="https://instagram.com/ixel_212"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-xs font-sans text-paper/80 hover:text-amber transition-colors mb-8 group"
+            >
+              <InstagramSVG />
+              <span>Connect with me on Instagram <strong className="font-semibold text-amber">@ixel_212</strong></span>
+            </a>
           </div>
 
           {/* Gear list */}
