@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, forwardRef } from "react";
+import Image from "next/image";
 import {
   Send,
   Loader2,
@@ -128,12 +129,16 @@ const ContactCard = forwardRef<HTMLElement>(function ContactCard(_, ref) {
           </div>
 
           <div className="relative z-10">
-            {/* Avatar — geometric square */}
-            <div
-              className="w-14 h-14 border border-amber rounded-2xl flex items-center justify-center mb-6"
-            >
-              {/* Simple face initials */}
-              <span className="font-serif text-xl font-bold text-amber">AK</span>
+            {/* Avatar Photo */}
+            <div className="relative w-16 h-16 border-2 border-amber rounded-2xl overflow-hidden mb-6 shadow-md bg-paper-dark">
+              <Image
+                src="https://images.stillframes.net/IMG_7203.jpg"
+                alt="Abhinav Kumar"
+                fill
+                className="object-cover object-top"
+                sizes="64px"
+                priority
+              />
             </div>
 
             <h2 className="font-serif text-3xl font-bold italic mb-4">
