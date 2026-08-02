@@ -449,28 +449,114 @@ function AdminContent() {
     if (!pending.length) return;
     setUploading(true);
     setUploadDone(false);
+
+    const { resizeImageToBlob } = await import("@/lib/image-processor");
+
     for (const item of pending) {
       setQueue((prev) => prev.map((i) => i.id === item.id ? { ...i, status: "uploading", expanded: false } : i));
       try {
         if (!item.title.trim()) throw new Error("Title is required.");
-        const formData = new FormData();
-        formData.append("file", item.file);
-        formData.append("title", item.title.trim());
-        formData.append("description", item.description.trim());
-        formData.append("camera", item.camera.trim());
-        formData.append("lens", item.lens.trim());
-        formData.append("film_simulation", item.filmSim);
-        formData.append("iso", item.iso);
-        formData.append("aperture", item.aperture.trim());
-        formData.append("shutter_speed", item.shutterSpeed.trim());
-        formData.append("focal_length", item.focalLength.trim());
-        formData.append("location", item.location.trim());
-        formData.append("tags", item.tags.trim());
-        const res = await fetch("/api/admin/upload", {
-          method: "POST", headers: { "x-admin-passkey": passkey }, body: formData,
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Upload failed.");
+
+        let uploadedViaR2 = false;
+
+        // ── Try R2 Direct Upload ──
+        try {
+          const presignRes = await fetch("/api/admin/r2-presign", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-admin-passkey": passkey,
+            },
+            body: JSON.stringify({
+              filename: item.file.name,
+              contentType: item.file.type || "image/jpeg",
+              size: item.file.size,
+            }),
+          });
+
+          if (presignRes.ok) {
+            const presignData = await presignRes.json();
+            const { uploadUrls, publicUrls, keys } = presignData;
+
+            console.log(`[R2 Upload] File: ${item.file.name} | Original size: ${item.file.size} bytes (${(item.file.size / (1024 * 1024)).toFixed(2)} MB)`);
+
+            // Generate web (2560px) and thumbnail (960px) JPEG blobs in browser
+            const [webBlob, thumbBlob] = await Promise.all([
+              resizeImageToBlob(item.file, 2560, 0.92).catch(() => item.file),
+              resizeImageToBlob(item.file, 960, 0.85).catch(() => item.file),
+            ]);
+
+            console.log(`[R2 Upload] Web blob: ${webBlob.size} bytes | Thumbnail blob: ${thumbBlob.size} bytes`);
+
+            // Upload 3 tiers directly to Cloudflare R2 (bypasses Vercel body limits)
+            const [origRes, webRes, thumbRes] = await Promise.all([
+              fetch(uploadUrls.original, { method: "PUT", headers: { "Content-Type": item.file.type || "image/jpeg" }, body: item.file }),
+              fetch(uploadUrls.web, { method: "PUT", headers: { "Content-Type": "image/jpeg", "Cache-Control": "public, max-age=31536000, immutable" }, body: webBlob }),
+              fetch(uploadUrls.thumbnail, { method: "PUT", headers: { "Content-Type": "image/jpeg", "Cache-Control": "public, max-age=31536000, immutable" }, body: thumbBlob }),
+            ]);
+
+            if (!origRes.ok || !webRes.ok || !thumbRes.ok) {
+              throw new Error(`R2 direct upload failed. Statuses: Orig ${origRes.status}, Web ${webRes.status}, Thumb ${thumbRes.status}`);
+            }
+
+            // Save metadata row to Supabase DB
+            const saveRes = await fetch("/api/admin/upload", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-admin-passkey": passkey,
+              },
+              body: JSON.stringify({
+                title: item.title.trim(),
+                description: item.description.trim(),
+                camera: item.camera.trim(),
+                lens: item.lens.trim(),
+                film_simulation: item.filmSim,
+                iso: item.iso,
+                aperture: item.aperture.trim(),
+                shutter_speed: item.shutterSpeed.trim(),
+                focal_length: item.focalLength.trim(),
+                location: item.location.trim(),
+                tags: item.tags.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean),
+                web_image_url: publicUrls.web,
+                thumbnail_url: publicUrls.thumbnail,
+                original_image_path: keys.original,
+              }),
+            });
+
+            const saveData = await saveRes.json();
+            if (!saveRes.ok) throw new Error(saveData.error || "Failed to save photo metadata.");
+            uploadedViaR2 = true;
+          }
+        } catch (r2Err) {
+          console.warn("R2 upload failed or not configured, trying fallback:", r2Err);
+        }
+
+        // ── Fallback: Legacy Direct Form Upload ──
+        if (!uploadedViaR2) {
+          const formData = new FormData();
+          formData.append("file", item.file);
+          formData.append("title", item.title.trim());
+          formData.append("description", item.description.trim());
+          formData.append("camera", item.camera.trim());
+          formData.append("lens", item.lens.trim());
+          formData.append("film_simulation", item.filmSim);
+          formData.append("iso", item.iso);
+          formData.append("aperture", item.aperture.trim());
+          formData.append("shutter_speed", item.shutterSpeed.trim());
+          formData.append("focal_length", item.focalLength.trim());
+          formData.append("location", item.location.trim());
+          formData.append("tags", item.tags.trim());
+
+          const res = await fetch("/api/admin/upload", {
+            method: "POST",
+            headers: { "x-admin-passkey": passkey },
+            body: formData,
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Upload failed.");
+        }
+
         setQueue((prev) => prev.map((i) => i.id === item.id ? { ...i, status: "done" } : i));
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Upload failed.";
