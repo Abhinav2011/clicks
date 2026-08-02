@@ -63,7 +63,7 @@ async function extractExif(file: File): Promise<Partial<QueueItem>> {
     if (!output) return {};
     return {
       exifParsed: true,
-      camera: output.Model || "Fujifilm X-T5",
+      camera: output.Model || "Fujifilm X-T30 II",
       lens: output.LensModel || "",
       iso: output.ISO ? String(output.ISO) : "",
       aperture: output.FNumber ? `f/${output.FNumber}` : "",
@@ -81,7 +81,7 @@ function buildQueueItem(file: File, exif: Partial<QueueItem>): QueueItem {
   return {
     id: makeId(), file, previewUrl: URL.createObjectURL(file),
     exifParsed: exif.exifParsed ?? false, title, description: "",
-    camera: exif.camera ?? "Fujifilm X-T5", lens: exif.lens ?? "",
+    camera: exif.camera ?? "Fujifilm X-T30 II", lens: exif.lens ?? "",
     filmSim: "Classic Chrome", iso: exif.iso ?? "", aperture: exif.aperture ?? "",
     shutterSpeed: exif.shutterSpeed ?? "", focalLength: exif.focalLength ?? "",
     location: "", tags: "", status: "pending", errorMsg: "", expanded: true,

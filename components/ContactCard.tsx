@@ -14,11 +14,9 @@ import {
 import { motion } from "framer-motion";
 
 const GEAR = [
-  { name: "Fujifilm X-T5", type: "body" },
-  { name: "XF 35mm f/1.4 R", type: "lens" },
-  { name: "XF 23mm f/1.4 R LM WR", type: "lens" },
-  { name: "XF 56mm f/1.2 R", type: "lens" },
-  { name: "XF 18-55mm f/2.8-4", type: "lens" },
+  { name: "Fujifilm X-T30 II", type: "body" },
+  { name: "iPhone 17", type: "body" },
+  { name: "XF 18-55mm f/2.8-4 R LM OIS", type: "lens" },
 ];
 
 /* ── Inline SVG camera body ornament ─────────────────────── */
