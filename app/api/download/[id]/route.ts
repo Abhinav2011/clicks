@@ -24,23 +24,30 @@ export async function GET(
     }
   }
 
-  // ── Generate signed URL for original (private bucket) ──
-  if (isSupabaseConfigured() && photo.original_image_path) {
-    try {
-      const { getServiceClient } = await import("@/lib/supabase");
-      const admin = getServiceClient();
-      const { data, error } = await admin.storage
-        .from("photos-original")
-        .createSignedUrl(photo.original_image_path, 300); // 5 min expiry
+  // ── Download raw full-resolution file directly from storage ──
+  try {
+    const imageUrl = photo.web_image_url;
+    const res = await fetch(imageUrl);
+    if (!res.ok) throw new Error("Failed to fetch full resolution image");
 
-      if (data?.signedUrl && !error) {
-        return Response.redirect(data.signedUrl, 302);
-      }
-    } catch (err) {
-      console.error("Signed URL generation failed:", err);
-    }
+    const arrayBuffer = await res.arrayBuffer();
+    const contentType = res.headers.get("content-type") || "image/jpeg";
+    const extension = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
+    const safeTitle = (photo.title || "stillframe").replace(/[^a-zA-Z0-9 _-]/g, "").trim();
+    const filename = `${safeTitle || "photograph"}.${extension}`;
+
+    return new Response(arrayBuffer, {
+      status: 200,
+      headers: {
+        "Content-Type": contentType,
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Content-Length": String(arrayBuffer.byteLength),
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    });
+  } catch (err) {
+    console.error("Download stream error:", err);
+    // Fallback: direct redirect
+    return Response.redirect(photo.web_image_url, 302);
   }
-
-  // ── Fallback: redirect to the web-optimized image ──
-  return Response.redirect(photo.web_image_url, 302);
 }
