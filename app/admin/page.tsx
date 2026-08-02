@@ -185,7 +185,7 @@ function ManagePanel({ passkey }: { passkey: string }) {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
-  const [deleteResult, setDeleteResult] = useState<{ ok: number; fail: number } | null>(null);
+  const [deleteResult, setDeleteResult] = useState<{ ok: number; fail: number; errorMsg?: string } | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const fetchPhotos = useCallback(async () => {
@@ -245,10 +245,10 @@ function ManagePanel({ passkey }: { passkey: string }) {
         setSelected(new Set());
         await fetchPhotos();
       } else {
-        setDeleteResult({ ok: 0, fail: selected.size });
+        setDeleteResult({ ok: 0, fail: selected.size, errorMsg: data.error || "Delete failed. Please check your passkey." });
       }
-    } catch {
-      setDeleteResult({ ok: 0, fail: selected.size });
+    } catch (err) {
+      setDeleteResult({ ok: 0, fail: selected.size, errorMsg: err instanceof Error ? err.message : "Delete failed." });
     } finally {
       setDeleting(false);
     }
@@ -303,7 +303,7 @@ function ManagePanel({ passkey }: { passkey: string }) {
           {deleteResult.ok > 0 ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
           {deleteResult.ok > 0
             ? `${deleteResult.ok} photo${deleteResult.ok > 1 ? "s" : ""} permanently deleted.`
-            : "Delete failed. Please try again."}
+            : (deleteResult.errorMsg || "Delete failed. Please try again.")}
         </div>
       )}
 
@@ -401,7 +401,6 @@ function AdminContent() {
   const handleAuthenticate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!passkey.trim()) { setPasskeyError("Please enter your admin passkey."); return; }
-    if (passkey !== validSecret) { setPasskeyError("Invalid passkey."); return; }
     setIsAuthenticated(true);
     setPasskeyError("");
   };
