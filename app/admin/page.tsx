@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, Suspense, useCallback } from "react";
+import { useState, useRef, Suspense, useCallback, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import exifr from "exifr";
@@ -18,34 +18,27 @@ import {
   ChevronUp,
   Images,
   Send,
+  Trash2,
+  RefreshCw,
+  LayoutGrid,
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import type { FilmSimulation } from "@/lib/types";
+import type { FilmSimulation, Photo } from "@/lib/types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const FILM_SIMULATIONS: FilmSimulation[] = [
-  "Classic Chrome",
-  "Velvia/Vivid",
-  "ACROS",
-  "Classic Neg.",
-  "Provia/Standard",
-  "PRO Neg. Hi",
-  "PRO Neg. Std",
-  "Astia/Soft",
-  "Eterna",
-  "Eterna Bleach Bypass",
-  "REALA ACE",
-  "Nostalgic Neg.",
+  "Classic Chrome", "Velvia/Vivid", "ACROS", "Classic Neg.", "Provia/Standard",
+  "PRO Neg. Hi", "PRO Neg. Std", "Astia/Soft", "Eterna", "Eterna Bleach Bypass",
+  "REALA ACE", "Nostalgic Neg.",
 ];
 
-// ─── Photo Queue Item Type ─────────────────────────────────────────────────────
+// ─── Upload Queue Types ────────────────────────────────────────────────────────
 interface QueueItem {
-  id: string;           // local unique id (not UUID)
+  id: string;
   file: File;
   previewUrl: string;
   exifParsed: boolean;
-  // editable metadata
   title: string;
   description: string;
   camera: string;
@@ -57,22 +50,16 @@ interface QueueItem {
   focalLength: string;
   location: string;
   tags: string;
-  // upload status
   status: "pending" | "uploading" | "done" | "error";
   errorMsg: string;
   expanded: boolean;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function makeId() {
-  return Math.random().toString(36).slice(2, 10);
-}
+function makeId() { return Math.random().toString(36).slice(2, 10); }
 
 async function extractExif(file: File): Promise<Partial<QueueItem>> {
   try {
-    const output = await exifr.parse(file, [
-      "Make", "Model", "LensModel", "ISO", "FNumber", "ExposureTime", "FocalLength",
-    ]);
+    const output = await exifr.parse(file, ["Make","Model","LensModel","ISO","FNumber","ExposureTime","FocalLength"]);
     if (!output) return {};
     return {
       exifParsed: true,
@@ -81,51 +68,29 @@ async function extractExif(file: File): Promise<Partial<QueueItem>> {
       iso: output.ISO ? String(output.ISO) : "",
       aperture: output.FNumber ? `f/${output.FNumber}` : "",
       shutterSpeed: output.ExposureTime
-        ? output.ExposureTime < 1
-          ? `1/${Math.round(1 / output.ExposureTime)}s`
-          : `${output.ExposureTime}s`
+        ? output.ExposureTime < 1 ? `1/${Math.round(1 / output.ExposureTime)}s` : `${output.ExposureTime}s`
         : "",
       focalLength: output.FocalLength ? `${output.FocalLength}mm` : "",
     };
-  } catch {
-    return {};
-  }
+  } catch { return {}; }
 }
 
 function buildQueueItem(file: File, exif: Partial<QueueItem>): QueueItem {
   const rawName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
   const title = rawName.charAt(0).toUpperCase() + rawName.slice(1);
   return {
-    id: makeId(),
-    file,
-    previewUrl: URL.createObjectURL(file),
-    exifParsed: exif.exifParsed ?? false,
-    title,
-    description: "",
-    camera: exif.camera ?? "Fujifilm X-T5",
-    lens: exif.lens ?? "",
-    filmSim: "Classic Chrome",
-    iso: exif.iso ?? "",
-    aperture: exif.aperture ?? "",
-    shutterSpeed: exif.shutterSpeed ?? "",
-    focalLength: exif.focalLength ?? "",
-    location: "",
-    tags: "",
-    status: "pending",
-    errorMsg: "",
-    expanded: true,
+    id: makeId(), file, previewUrl: URL.createObjectURL(file),
+    exifParsed: exif.exifParsed ?? false, title, description: "",
+    camera: exif.camera ?? "Fujifilm X-T5", lens: exif.lens ?? "",
+    filmSim: "Classic Chrome", iso: exif.iso ?? "", aperture: exif.aperture ?? "",
+    shutterSpeed: exif.shutterSpeed ?? "", focalLength: exif.focalLength ?? "",
+    location: "", tags: "", status: "pending", errorMsg: "", expanded: true,
   };
 }
 
-// ─── Photo Queue Card ──────────────────────────────────────────────────────────
-function PhotoCard({
-  item,
-  index,
-  onChange,
-  onRemove,
-}: {
-  item: QueueItem;
-  index: number;
+// ─── Upload Queue Photo Card ───────────────────────────────────────────────────
+function PhotoCard({ item, index, onChange, onRemove }: {
+  item: QueueItem; index: number;
   onChange: (id: string, field: keyof QueueItem, value: string | boolean) => void;
   onRemove: (id: string) => void;
 }) {
@@ -136,71 +101,39 @@ function PhotoCard({
     disabled: item.status === "uploading" || item.status === "done",
   });
 
-  const statusIcon =
-    item.status === "done" ? (
-      <CheckCircle2 size={16} className="text-green-600 flex-shrink-0" />
-    ) : item.status === "error" ? (
-      <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
-    ) : item.status === "uploading" ? (
-      <Loader2 size={16} className="animate-spin text-amber flex-shrink-0" />
-    ) : null;
-
-  const cardBorder =
-    item.status === "done"
-      ? "border-green-400/50"
-      : item.status === "error"
-      ? "border-red-400/50"
-      : item.status === "uploading"
-      ? "border-amber/60"
-      : "border-border";
+  const cardBorder = item.status === "done" ? "border-green-400/50"
+    : item.status === "error" ? "border-red-400/50"
+    : item.status === "uploading" ? "border-amber/60"
+    : "border-border";
 
   return (
     <div className={`border-2 ${cardBorder} rounded-2xl overflow-hidden bg-paper transition-all duration-300`}>
-      {/* Card Header */}
-      <div
-        className="flex items-center gap-4 p-4 cursor-pointer select-none hover:bg-paper-alt/30 transition-colors"
-        onClick={() => onChange(item.id, "expanded", !item.expanded)}
-      >
-        {/* Thumbnail */}
+      <div className="flex items-center gap-4 p-4 cursor-pointer select-none hover:bg-paper-alt/30 transition-colors"
+        onClick={() => onChange(item.id, "expanded", !item.expanded)}>
         <div className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 shadow-sm">
           <Image src={item.previewUrl} alt={item.title} fill className="object-cover" />
         </div>
-
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm text-ink truncate">{item.title || `Photo ${index + 1}`}</p>
-          {item.exifParsed && (
-            <p className="text-xs text-amber-dark flex items-center gap-1 mt-0.5">
-              <Sparkles size={10} /> EXIF auto-extracted
-            </p>
-          )}
-          {item.status === "error" && (
-            <p className="text-xs text-red-500 mt-0.5 truncate">{item.errorMsg}</p>
-          )}
-          {item.status === "done" && (
-            <p className="text-xs text-green-600 mt-0.5">Published successfully!</p>
-          )}
+          {item.exifParsed && <p className="text-xs text-amber-dark flex items-center gap-1 mt-0.5"><Sparkles size={10} /> EXIF auto-extracted</p>}
+          {item.status === "error" && <p className="text-xs text-red-500 mt-0.5 truncate">{item.errorMsg}</p>}
+          {item.status === "done" && <p className="text-xs text-green-600 mt-0.5">Published successfully!</p>}
         </div>
-
         <div className="flex items-center gap-2 flex-shrink-0">
-          {statusIcon}
+          {item.status === "done" && <CheckCircle2 size={16} className="text-green-600" />}
+          {item.status === "error" && <AlertCircle size={16} className="text-red-500" />}
+          {item.status === "uploading" && <Loader2 size={16} className="animate-spin text-amber" />}
           {item.status !== "uploading" && item.status !== "done" && (
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onRemove(item.id); }}
-              className="p-1 text-ink-muted hover:text-red-500 transition-colors"
-              title="Remove photo"
-            >
+            <button type="button" onClick={(e) => { e.stopPropagation(); onRemove(item.id); }}
+              className="p-1 text-ink-muted hover:text-red-500 transition-colors" title="Remove">
               <X size={15} />
             </button>
           )}
           {item.expanded ? <ChevronUp size={16} className="text-ink-muted" /> : <ChevronDown size={16} className="text-ink-muted" />}
         </div>
       </div>
-
-      {/* Expanded Fields */}
       {item.expanded && (
         <div className="border-t border-border p-4 space-y-4">
-          {/* Title + Description */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[10px] font-semibold text-ink-muted uppercase tracking-widest mb-1">Title *</label>
@@ -213,47 +146,24 @@ function PhotoCard({
                 className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-paper-alt/50 text-ink focus:outline-none focus:border-amber" />
             </div>
           </div>
-
           <div>
             <label className="block text-[10px] font-semibold text-ink-muted uppercase tracking-widest mb-1">Description</label>
             <textarea rows={2} {...inp("description")} placeholder="Brief story about this frame..."
               className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-paper-alt/50 text-ink focus:outline-none focus:border-amber resize-none" />
           </div>
-
-          {/* EXIF / Camera Specs */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-[10px] font-semibold text-ink-muted uppercase tracking-widest mb-1">Camera</label>
-              <input type="text" {...inp("camera")} className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-paper-alt/50 text-ink focus:outline-none focus:border-amber" />
-            </div>
-            <div>
-              <label className="block text-[10px] font-semibold text-ink-muted uppercase tracking-widest mb-1">Lens</label>
-              <input type="text" {...inp("lens")} placeholder="XF 35mm f/1.4 R" className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-paper-alt/50 text-ink focus:outline-none focus:border-amber" />
-            </div>
-            <div>
-              <label className="block text-[10px] font-semibold text-ink-muted uppercase tracking-widest mb-1">ISO</label>
-              <input type="number" {...inp("iso")} placeholder="160" className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-paper-alt/50 text-ink focus:outline-none focus:border-amber" />
-            </div>
-            <div>
-              <label className="block text-[10px] font-semibold text-ink-muted uppercase tracking-widest mb-1">Aperture</label>
-              <input type="text" {...inp("aperture")} placeholder="f/1.4" className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-paper-alt/50 text-ink focus:outline-none focus:border-amber" />
-            </div>
-            <div>
-              <label className="block text-[10px] font-semibold text-ink-muted uppercase tracking-widest mb-1">Shutter</label>
-              <input type="text" {...inp("shutterSpeed")} placeholder="1/250s" className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-paper-alt/50 text-ink focus:outline-none focus:border-amber" />
-            </div>
-            <div>
-              <label className="block text-[10px] font-semibold text-ink-muted uppercase tracking-widest mb-1">Focal Length</label>
-              <input type="text" {...inp("focalLength")} placeholder="35mm" className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-paper-alt/50 text-ink focus:outline-none focus:border-amber" />
-            </div>
+            {([["camera","Camera"],["lens","Lens"],["iso","ISO"],["aperture","Aperture"],["shutterSpeed","Shutter"],["focalLength","Focal Length"]] as [keyof QueueItem, string][]).map(([field, label]) => (
+              <div key={field}>
+                <label className="block text-[10px] font-semibold text-ink-muted uppercase tracking-widest mb-1">{label}</label>
+                <input type={field === "iso" ? "number" : "text"} {...inp(field)} placeholder={field === "iso" ? "160" : undefined}
+                  className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-paper-alt/50 text-ink focus:outline-none focus:border-amber" />
+              </div>
+            ))}
           </div>
-
-          {/* Film Sim + Tags */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[10px] font-semibold text-ink-muted uppercase tracking-widest mb-1">Film Simulation</label>
-              <select {...inp("filmSim")}
-                className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-paper-alt/50 text-ink focus:outline-none focus:border-amber cursor-pointer">
+              <select {...inp("filmSim")} className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-paper-alt/50 text-ink focus:outline-none focus:border-amber cursor-pointer">
                 {FILM_SIMULATIONS.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
@@ -269,27 +179,225 @@ function PhotoCard({
   );
 }
 
+// ─── Manage & Delete Panel ─────────────────────────────────────────────────────
+function ManagePanel({ passkey }: { passkey: string }) {
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
+  const [deleteResult, setDeleteResult] = useState<{ ok: number; fail: number } | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const fetchPhotos = useCallback(async () => {
+    setLoading(true);
+    setDeleteResult(null);
+    try {
+      const res = await fetch("/api/photos?page=1");
+      const data = await res.json();
+      // Fetch all pages if needed
+      let all: Photo[] = data.photos || [];
+      let page = 2;
+      while (data.hasMore || (all.length < (data.total || 0))) {
+        const r = await fetch(`/api/photos?page=${page}`);
+        const d = await r.json();
+        all = [...all, ...(d.photos || [])];
+        if (!d.hasMore) break;
+        page++;
+      }
+      setPhotos(all);
+    } catch {
+      setPhotos([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => setSelected(new Set(photos.map((p) => p.id)));
+  const deselectAll = () => setSelected(new Set());
+  const allSelected = photos.length > 0 && selected.size === photos.length;
+
+  const handleDelete = async () => {
+    if (!selected.size) return;
+    setDeleting(true);
+    setConfirmOpen(false);
+    try {
+      const res = await fetch("/api/admin/delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-passkey": passkey,
+        },
+        body: JSON.stringify({ ids: Array.from(selected) }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDeleteResult({ ok: data.deleted, fail: 0 });
+        setSelected(new Set());
+        await fetchPhotos();
+      } else {
+        setDeleteResult({ ok: 0, fail: selected.size });
+      }
+    } catch {
+      setDeleteResult({ ok: 0, fail: selected.size });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-20 gap-3 text-ink-muted">
+      <Loader2 size={22} className="animate-spin" />
+      <span className="text-sm">Loading your photos...</span>
+    </div>
+  );
+
+  return (
+    <div className="space-y-5">
+      {/* Toolbar */}
+      <div className="glass-card rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-ink font-medium">{photos.length} photo{photos.length !== 1 ? "s" : ""} in gallery</span>
+          {photos.length > 0 && (
+            <button onClick={allSelected ? deselectAll : selectAll}
+              className="text-xs text-amber-dark hover:underline font-medium">
+              {allSelected ? "Deselect all" : "Select all"}
+            </button>
+          )}
+          {selected.size > 0 && (
+            <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">
+              {selected.size} selected
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={fetchPhotos} title="Refresh"
+            className="p-2 text-ink-muted hover:text-ink border border-border rounded-lg transition-colors">
+            <RefreshCw size={15} />
+          </button>
+          <button
+            onClick={() => setConfirmOpen(true)}
+            disabled={selected.size === 0 || deleting}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-medium
+                       hover:bg-red-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {deleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+            {deleting ? "Deleting..." : `Delete ${selected.size > 0 ? selected.size : ""} Selected`}
+          </button>
+        </div>
+      </div>
+
+      {/* Delete result feedback */}
+      {deleteResult && (
+        <div className={`flex items-center gap-2 p-3 rounded-xl text-sm font-medium
+          ${deleteResult.ok > 0 ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+          {deleteResult.ok > 0 ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+          {deleteResult.ok > 0
+            ? `${deleteResult.ok} photo${deleteResult.ok > 1 ? "s" : ""} permanently deleted.`
+            : "Delete failed. Please try again."}
+        </div>
+      )}
+
+      {/* Photo grid */}
+      {photos.length === 0 ? (
+        <div className="text-center py-20 text-ink-muted">
+          <LayoutGrid size={40} className="mx-auto mb-3 opacity-30" />
+          <p className="text-sm">No photos in the gallery yet.</p>
+          <p className="text-xs mt-1">Switch to the Upload tab to add photos.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {photos.map((photo) => {
+            const isSelected = selected.has(photo.id);
+            return (
+              <div key={photo.id}
+                onClick={() => toggleSelect(photo.id)}
+                className={`relative rounded-xl overflow-hidden cursor-pointer group border-2 transition-all duration-200
+                  ${isSelected ? "border-red-400 scale-[0.97]" : "border-transparent hover:border-border"}`}
+              >
+                {/* Checkbox overlay */}
+                <div className={`absolute top-2 left-2 z-10 w-5 h-5 rounded border-2 flex items-center justify-center transition-all
+                  ${isSelected ? "bg-red-500 border-red-500" : "bg-white/80 border-white/60 group-hover:border-white"}`}>
+                  {isSelected && <CheckCircle2 size={13} className="text-white" />}
+                </div>
+
+                {/* Thumbnail */}
+                <div className="relative aspect-square bg-paper-dark">
+                  <Image src={photo.thumbnail_url || photo.web_image_url} alt={photo.title} fill
+                    className="object-cover" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" />
+                </div>
+
+                {/* Info overlay */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                  <p className="text-white text-xs font-medium truncate">{photo.title}</p>
+                  {photo.film_simulation && (
+                    <p className="text-white/60 text-[10px] truncate">{photo.film_simulation}</p>
+                  )}
+                </div>
+
+                {/* Selected overlay */}
+                {isSelected && (
+                  <div className="absolute inset-0 bg-red-500/20 pointer-events-none" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Confirm Delete Dialog */}
+      {confirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-paper rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-border">
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <Trash2 size={22} className="text-red-500" />
+            </div>
+            <h3 className="font-serif text-xl font-semibold text-ink text-center mb-2">Confirm Delete</h3>
+            <p className="text-sm text-ink-muted text-center mb-6">
+              You are about to <strong className="text-red-500">permanently delete {selected.size} photo{selected.size > 1 ? "s" : ""}</strong> from your gallery and storage. This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmOpen(false)}
+                className="flex-1 py-2.5 rounded-lg border border-border text-sm font-medium text-ink hover:bg-paper-alt transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleDelete}
+                className="flex-1 py-2.5 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors">
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Admin Content ────────────────────────────────────────────────────────
 function AdminContent() {
-  // URL key protection is handled server-side in middleware.ts
-  // The passkey form below is a second layer of protection
   const validSecret = process.env.NEXT_PUBLIC_ADMIN_SECRET_KEY || "fuji2026";
 
-  // ── Auth
   const [passkey, setPasskey] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passkeyError, setPasskeyError] = useState("");
+  const [activeTab, setActiveTab] = useState<"upload" | "manage">("upload");
 
-  // ── Queue
+  // ── Upload queue state
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // ── Upload state
   const [uploading, setUploading] = useState(false);
   const [uploadDone, setUploadDone] = useState(false);
 
-  // ── Auth
   const handleAuthenticate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!passkey.trim()) { setPasskeyError("Please enter your admin passkey."); return; }
@@ -298,64 +406,38 @@ function AdminContent() {
     setPasskeyError("");
   };
 
-  // ── Add files to queue
   const addFiles = useCallback(async (files: File[]) => {
     const imageFiles = files.filter((f) => f.type.startsWith("image/"));
     if (!imageFiles.length) return;
-
-    const newItems = await Promise.all(
-      imageFiles.map(async (file) => {
-        const exif = await extractExif(file);
-        return buildQueueItem(file, exif);
-      })
-    );
-
+    const newItems = await Promise.all(imageFiles.map(async (file) => {
+      const exif = await extractExif(file);
+      return buildQueueItem(file, exif);
+    }));
     setQueue((prev) => [...prev, ...newItems]);
     setUploadDone(false);
   }, []);
 
-  // ── Drag & Drop
   const onDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
   const onDragLeave = () => setIsDragging(false);
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    addFiles(Array.from(e.dataTransfer.files));
-  };
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) addFiles(Array.from(e.target.files));
-    e.target.value = "";
-  };
+  const onDrop = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); addFiles(Array.from(e.dataTransfer.files)); };
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files) addFiles(Array.from(e.target.files)); e.target.value = ""; };
 
-  // ── Field change
   const handleFieldChange = (id: string, field: keyof QueueItem, value: string | boolean) => {
     setQueue((prev) => prev.map((item) => item.id === id ? { ...item, [field]: value } : item));
   };
-
-  // ── Remove
   const handleRemove = (id: string) => {
-    setQueue((prev) => {
-      const item = prev.find((i) => i.id === id);
-      if (item) URL.revokeObjectURL(item.previewUrl);
-      return prev.filter((i) => i.id !== id);
-    });
+    setQueue((prev) => { const item = prev.find((i) => i.id === id); if (item) URL.revokeObjectURL(item.previewUrl); return prev.filter((i) => i.id !== id); });
   };
 
-  // ── Upload all
   const handleUploadAll = async () => {
     const pending = queue.filter((i) => i.status === "pending" || i.status === "error");
     if (!pending.length) return;
-
     setUploading(true);
     setUploadDone(false);
-
     for (const item of pending) {
-      // Mark uploading
       setQueue((prev) => prev.map((i) => i.id === item.id ? { ...i, status: "uploading", expanded: false } : i));
-
       try {
         if (!item.title.trim()) throw new Error("Title is required.");
-
         const formData = new FormData();
         formData.append("file", item.file);
         formData.append("title", item.title.trim());
@@ -369,28 +451,21 @@ function AdminContent() {
         formData.append("focal_length", item.focalLength.trim());
         formData.append("location", item.location.trim());
         formData.append("tags", item.tags.trim());
-
         const res = await fetch("/api/admin/upload", {
-          method: "POST",
-          headers: { "x-admin-passkey": passkey || validSecret },
-          body: formData,
+          method: "POST", headers: { "x-admin-passkey": passkey || validSecret }, body: formData,
         });
-
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Upload failed.");
-
         setQueue((prev) => prev.map((i) => i.id === item.id ? { ...i, status: "done" } : i));
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Upload failed.";
         setQueue((prev) => prev.map((i) => i.id === item.id ? { ...i, status: "error", errorMsg: msg, expanded: true } : i));
       }
     }
-
     setUploading(false);
     setUploadDone(true);
   };
 
-  // ── Stats
   const totalCount = queue.length;
   const doneCount = queue.filter((i) => i.status === "done").length;
   const errorCount = queue.filter((i) => i.status === "error").length;
@@ -399,17 +474,13 @@ function AdminContent() {
 
   return (
     <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-ink-muted hover:text-ink transition-colors mb-2">
-            <ArrowLeft size={14} /> Back to Gallery
-          </Link>
-          <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-ink">Bulk Upload</h1>
-          <p className="text-sm text-ink-muted mt-1">
-            Drop multiple photos at once — EXIF is extracted automatically for each.
-          </p>
-        </div>
+      {/* Page Header */}
+      <div className="mb-8">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-ink-muted hover:text-ink transition-colors mb-2">
+          <ArrowLeft size={14} /> Back to Gallery
+        </Link>
+        <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-ink">Admin Portal</h1>
+        <p className="text-sm text-ink-muted mt-1">Upload new photos or manage your existing gallery.</p>
       </div>
 
       {/* Passkey Gate */}
@@ -419,16 +490,10 @@ function AdminContent() {
             <KeyRound size={28} strokeWidth={1.5} />
           </div>
           <h2 className="font-serif text-2xl font-semibold text-ink mb-2">Admin Passcode Required</h2>
-          <p className="text-sm text-ink-muted mb-6">Enter your secret admin passkey to access photo uploading.</p>
+          <p className="text-sm text-ink-muted mb-6">Enter your secret admin passkey to access the portal.</p>
           <form onSubmit={handleAuthenticate} className="space-y-4">
-            <input
-              type="password"
-              value={passkey}
-              onChange={(e) => setPasskey(e.target.value)}
-              placeholder="Enter passkey"
-              autoFocus
-              className="w-full px-4 py-3 rounded-lg border border-border bg-paper-alt/50 text-ink text-sm text-center placeholder:text-ink-muted/50 focus:outline-none focus:border-amber focus:ring-2 focus:ring-amber/20"
-            />
+            <input type="password" value={passkey} onChange={(e) => setPasskey(e.target.value)} placeholder="Enter passkey" autoFocus
+              className="w-full px-4 py-3 rounded-lg border border-border bg-paper-alt/50 text-ink text-sm text-center placeholder:text-ink-muted/50 focus:outline-none focus:border-amber focus:ring-2 focus:ring-amber/20" />
             {passkeyError && <p className="text-xs text-red-500 font-medium">{passkeyError}</p>}
             <button type="submit" className="w-full py-3 rounded-lg bg-ink text-paper text-sm font-medium hover:bg-ink-light transition-colors duration-200">
               Access Admin Portal
@@ -437,124 +502,104 @@ function AdminContent() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Drop Zone */}
-          <div
-            onDragOver={onDragOver}
-            onDragLeave={onDragLeave}
-            onDrop={onDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className={`
-              border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer
-              transition-all duration-200 flex flex-col items-center justify-center gap-4
-              ${isDragging ? "border-amber bg-amber-light/15 scale-[1.01]" : "border-border hover:border-amber hover:bg-paper-alt/30"}
-            `}
-          >
-            <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={onFileChange} className="hidden" />
-            <div className="w-14 h-14 rounded-full bg-paper-dark/50 flex items-center justify-center text-ink-muted">
-              <Images size={28} strokeWidth={1.5} />
-            </div>
-            <div>
-              <p className="text-base font-medium text-ink">
-                {isDragging ? "Release to add photos" : "Drag & drop multiple photos here"}
-              </p>
-              <p className="text-xs text-ink-muted mt-1">Or click to browse — JPG, WebP, PNG, HEIC, RAF supported</p>
-            </div>
-            {totalCount > 0 && (
-              <span className="text-xs bg-ink text-paper px-3 py-1 rounded-full font-medium">
-                {totalCount} photo{totalCount > 1 ? "s" : ""} in queue — click to add more
-              </span>
-            )}
+          {/* Tab Bar */}
+          <div className="flex border-b border-border gap-1">
+            {([
+              { key: "upload", label: "Upload Photos", icon: Upload },
+              { key: "manage", label: "Manage & Delete", icon: Trash2 },
+            ] as { key: "upload" | "manage"; label: string; icon: React.ComponentType<{size?: number; className?: string}> }[]).map(({ key, label, icon: Icon }) => (
+              <button key={key} onClick={() => setActiveTab(key)}
+                className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors
+                  ${activeTab === key ? "border-ink text-ink" : "border-transparent text-ink-muted hover:text-ink"}`}>
+                <Icon size={15} className={activeTab === key && key === "manage" ? "text-red-500" : undefined} />
+                {label}
+              </button>
+            ))}
           </div>
 
-          {/* Progress Summary Bar */}
-          {totalCount > 0 && (
-            <div className="glass-card rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-4 text-sm">
-                <span className="text-ink font-medium">{totalCount} photo{totalCount > 1 ? "s" : ""}</span>
-                {doneCount > 0 && <span className="text-green-600 font-medium flex items-center gap-1"><CheckCircle2 size={14} />{doneCount} done</span>}
-                {errorCount > 0 && <span className="text-red-500 font-medium flex items-center gap-1"><AlertCircle size={14} />{errorCount} failed</span>}
-                {pendingCount > 0 && <span className="text-ink-muted">{pendingCount} pending</span>}
+          {/* ── UPLOAD TAB ───────────────────────────────────────── */}
+          {activeTab === "upload" && (
+            <div className="space-y-6">
+              {/* Drop Zone */}
+              <div onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer
+                  transition-all duration-200 flex flex-col items-center justify-center gap-4
+                  ${isDragging ? "border-amber bg-amber-light/15 scale-[1.01]" : "border-border hover:border-amber hover:bg-paper-alt/30"}`}>
+                <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={onFileChange} className="hidden" />
+                <div className="w-14 h-14 rounded-full bg-paper-dark/50 flex items-center justify-center text-ink-muted">
+                  <Images size={28} strokeWidth={1.5} />
+                </div>
+                <div>
+                  <p className="text-base font-medium text-ink">{isDragging ? "Release to add photos" : "Drag & drop multiple photos here"}</p>
+                  <p className="text-xs text-ink-muted mt-1">Or click to browse — JPG, WebP, PNG, HEIC, RAF supported</p>
+                </div>
+                {totalCount > 0 && (
+                  <span className="text-xs bg-ink text-paper px-3 py-1 rounded-full font-medium">
+                    {totalCount} photo{totalCount > 1 ? "s" : ""} in queue — click to add more
+                  </span>
+                )}
               </div>
 
-              {/* Progress bar */}
-              {doneCount > 0 && (
-                <div className="w-full h-1.5 bg-paper-dark rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-green-500 rounded-full transition-all duration-500"
-                    style={{ width: `${(doneCount / totalCount) * 100}%` }}
-                  />
+              {/* Queue summary */}
+              {totalCount > 0 && (
+                <div className="glass-card rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="text-ink font-medium">{totalCount} photo{totalCount > 1 ? "s" : ""}</span>
+                    {doneCount > 0 && <span className="text-green-600 font-medium flex items-center gap-1"><CheckCircle2 size={14} />{doneCount} done</span>}
+                    {errorCount > 0 && <span className="text-red-500 font-medium flex items-center gap-1"><AlertCircle size={14} />{errorCount} failed</span>}
+                    {pendingCount > 0 && <span className="text-ink-muted">{pendingCount} pending</span>}
+                  </div>
+                  {doneCount > 0 && (
+                    <div className="w-full h-1.5 bg-paper-dark rounded-full overflow-hidden">
+                      <div className="h-full bg-green-500 rounded-full transition-all duration-500" style={{ width: `${(doneCount / totalCount) * 100}%` }} />
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 ml-auto">
+                    {uploadDone && doneCount > 0 && (
+                      <button onClick={() => setActiveTab("manage")} className="text-xs text-amber-dark hover:underline font-medium">
+                        Manage photos →
+                      </button>
+                    )}
+                    <button type="button" onClick={handleUploadAll} disabled={uploading || !hasUploadable}
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-ink text-paper font-medium text-sm
+                                 hover:bg-ink-light transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                      {uploading ? <><Loader2 size={15} className="animate-spin" /> Uploading...</> : <><Send size={15} /> Publish All</>}
+                    </button>
+                  </div>
                 </div>
               )}
 
-              <div className="flex items-center gap-2 ml-auto">
-                {uploadDone && doneCount > 0 && (
-                  <Link href="/" className="text-xs text-amber-dark hover:underline font-medium">
-                    View live gallery →
-                  </Link>
-                )}
-                <button
-                  type="button"
-                  onClick={handleUploadAll}
-                  disabled={uploading || !hasUploadable}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-ink text-paper font-medium text-sm
-                             hover:bg-ink-light transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                >
-                  {uploading ? (
-                    <><Loader2 size={15} className="animate-spin" /> Uploading...</>
-                  ) : (
-                    <><Send size={15} /> Publish All</>
-                  )}
-                </button>
-              </div>
+              {/* Cards */}
+              {queue.length > 0 && (
+                <div className="space-y-3">
+                  {queue.map((item, idx) => (
+                    <PhotoCard key={item.id} item={item} index={idx} onChange={handleFieldChange} onRemove={handleRemove} />
+                  ))}
+                </div>
+              )}
+
+              {/* Bottom CTA */}
+              {totalCount > 0 && (
+                <div className="flex items-center justify-between pt-4 border-t border-border">
+                  <button type="button" onClick={() => { queue.forEach((i) => URL.revokeObjectURL(i.previewUrl)); setQueue([]); setUploadDone(false); }}
+                    disabled={uploading} className="text-sm text-ink-muted hover:text-red-500 transition-colors disabled:opacity-40">
+                    Clear all
+                  </button>
+                  <button type="button" onClick={handleUploadAll} disabled={uploading || !hasUploadable}
+                    className="flex items-center gap-2 px-8 py-3.5 rounded-full bg-ink text-paper font-medium text-sm
+                               hover:bg-ink-light transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
+                    {uploading
+                      ? <><Loader2 size={16} className="animate-spin" /> Uploading {doneCount}/{totalCount}...</>
+                      : <><Camera size={16} /> Publish {pendingCount + errorCount} Photo{pendingCount + errorCount !== 1 ? "s" : ""}</>}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Photo Cards Queue */}
-          {queue.length > 0 && (
-            <div className="space-y-3">
-              {queue.map((item, idx) => (
-                <PhotoCard
-                  key={item.id}
-                  item={item}
-                  index={idx}
-                  onChange={handleFieldChange}
-                  onRemove={handleRemove}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Upload all — sticky bottom CTA */}
-          {totalCount > 0 && (
-            <div className="flex items-center justify-between pt-4 border-t border-border">
-              <button
-                type="button"
-                onClick={() => {
-                  queue.forEach((i) => URL.revokeObjectURL(i.previewUrl));
-                  setQueue([]);
-                  setUploadDone(false);
-                }}
-                disabled={uploading}
-                className="text-sm text-ink-muted hover:text-red-500 transition-colors disabled:opacity-40"
-              >
-                Clear all
-              </button>
-              <button
-                type="button"
-                onClick={handleUploadAll}
-                disabled={uploading || !hasUploadable}
-                className="flex items-center gap-2 px-8 py-3.5 rounded-full bg-ink text-paper
-                           font-medium text-sm hover:bg-ink-light transition-all duration-200
-                           disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-              >
-                {uploading ? (
-                  <><Loader2 size={16} className="animate-spin" /> Uploading {doneCount}/{totalCount}...</>
-                ) : (
-                  <><Camera size={16} /> Publish {hasUploadable ? pendingCount + errorCount : 0} Photo{pendingCount + errorCount !== 1 ? "s" : ""}</>
-                )}
-              </button>
-            </div>
-          )}
+          {/* ── MANAGE TAB ───────────────────────────────────────── */}
+          {activeTab === "manage" && <ManagePanel passkey={passkey || validSecret} />}
         </div>
       )}
     </main>
