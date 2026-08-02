@@ -194,13 +194,13 @@ const ContactCard = forwardRef<HTMLElement>(function ContactCard(_, ref) {
           </p>
 
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
-            {/* Honeypot (hidden) */}
+            {/* Honeypot (hidden from humans & autofill) */}
             <input
               type="text"
               name="_hp"
               tabIndex={-1}
-              autoComplete="off"
-              className="absolute opacity-0 h-0 w-0 pointer-events-none"
+              autoComplete="new-password"
+              style={{ display: "none" }}
               aria-hidden="true"
             />
 

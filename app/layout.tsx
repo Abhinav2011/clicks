@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Clicks — Fujifilm Photo Gallery",
+  title: "Still Frames — Fujifilm Photo Gallery",
   description:
     "A curated collection of photographs shot on Fujifilm cameras. Explore film simulations, download high-resolution images, and get in touch.",
   keywords: [
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     "street photography",
   ],
   openGraph: {
-    title: "Clicks — Fujifilm Photo Gallery",
+    title: "Still Frames — Fujifilm Photo Gallery",
     description:
       "Explore a curated collection of Fujifilm photography with film simulations and full-resolution downloads.",
     type: "website",

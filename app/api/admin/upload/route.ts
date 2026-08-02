@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 import { isSupabaseConfigured } from "@/lib/supabase";
-import { addSamplePhoto } from "@/lib/photos";
 import type { Photo, FilmSimulation } from "@/lib/types";
 import path from "path";
 import fs from "fs/promises";
@@ -140,8 +139,6 @@ export async function POST(request: NextRequest) {
       published: true,
       created_at: new Date().toISOString(),
     };
-
-    addSamplePhoto(newPhoto);
 
     return Response.json({ success: true, photo: newPhoto });
   } catch (err) {

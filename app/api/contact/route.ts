@@ -4,7 +4,7 @@ import { isSupabaseConfigured } from "@/lib/supabase";
 // ── Simple in-memory rate limiter ──
 const rateLimit = new Map<string, { count: number; reset: number }>();
 const RATE_LIMIT_WINDOW = 60_000; // 1 minute
-const RATE_LIMIT_MAX = 5; // 5 requests per window
+const RATE_LIMIT_MAX = 10; // 10 requests per window
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -40,7 +40,6 @@ export async function POST(request: NextRequest) {
 
     // ── Honeypot check ──
     if (honeypot) {
-      // Silently accept to not tip off bots
       return Response.json({ success: true });
     }
 
@@ -60,66 +59,85 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── Log to Supabase (if configured) ──
+    // ── 1. Log to Supabase (if configured) ──
     if (isSupabaseConfigured()) {
       try {
-        // Use service role for INSERT into contact_messages
         const { getServiceClient } = await import("@/lib/supabase");
         const admin = getServiceClient();
-        await admin.from("contact_messages").insert({
+        const { error: dbError } = await admin.from("contact_messages").insert({
           name: name.trim(),
           email: email.trim(),
           subject: subject.trim(),
           message: message.trim(),
           ip_address: ip,
         });
+
+        if (dbError) {
+          console.error("Supabase insert error in contact_messages:", dbError);
+        } else {
+          console.log("Logged contact message into Supabase successfully.");
+        }
       } catch (dbErr) {
-        console.error("Failed to log contact message:", dbErr);
-        // Don't fail the request — email is primary delivery
+        console.error("Failed to log contact message to Supabase:", dbErr);
       }
     }
 
-    // ── Send email via Resend (if API key configured) ──
+    // ── 2. Send email via Resend ──
     const resendKey = process.env.RESEND_API_KEY;
-    const contactEmail = process.env.CONTACT_EMAIL;
+    const contactEmail = process.env.CONTACT_EMAIL || process.env.CONTACT_TO_EMAIL;
 
-    if (resendKey && contactEmail) {
-      const emailRes = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${resendKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: "Clicks Contact <onboarding@resend.dev>",
-          to: contactEmail,
-          subject: `[Clicks] ${subject.trim()}`,
-          html: `
-            <div style="font-family: sans-serif; max-width: 600px;">
-              <h2 style="color: #1C1C1C;">New message from Clicks</h2>
-              <p><strong>From:</strong> ${name.trim()} (${email.trim()})</p>
-              <p><strong>Subject:</strong> ${subject.trim()}</p>
-              <hr style="border: 1px solid #E5E0D8; margin: 16px 0;" />
-              <p style="white-space: pre-wrap; color: #3A3A3A;">${message.trim()}</p>
-            </div>
-          `,
-          reply_to: email.trim(),
-        }),
-      });
-
-      if (!emailRes.ok) {
-        console.error("Resend error:", await emailRes.text());
-      }
-    } else {
-      console.log("Contact form submission (no email service configured):", {
-        name: name.trim(),
-        email: email.trim(),
-        subject: subject.trim(),
-        message: message.trim().substring(0, 100) + "…",
-      });
+    if (!resendKey) {
+      console.warn("RESEND_API_KEY is missing in environment variables.");
+      return Response.json(
+        { error: "Email service not configured (RESEND_API_KEY missing)." },
+        { status: 500 }
+      );
     }
 
-    return Response.json({ success: true });
+    if (!contactEmail) {
+      console.warn("CONTACT_EMAIL is missing in environment variables.");
+      return Response.json(
+        { error: "Destination email not configured (CONTACT_EMAIL missing)." },
+        { status: 500 }
+      );
+    }
+
+    const emailRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "Still Frames Contact <onboarding@resend.dev>",
+        to: [contactEmail],
+        subject: `[Still Frames] ${subject.trim()}`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 2px solid #171614; background: #FAF8F5;">
+            <h2 style="color: #171614; font-family: serif; margin-top: 0;">New Message from Still Frames</h2>
+            <p><strong>Name:</strong> ${name.trim()}</p>
+            <p><strong>Email:</strong> ${email.trim()}</p>
+            <p><strong>Subject:</strong> ${subject.trim()}</p>
+            <hr style="border: none; border-top: 1px solid #D6D0C8; margin: 16px 0;" />
+            <p style="white-space: pre-wrap; color: #2E2B28; line-height: 1.6;">${message.trim()}</p>
+          </div>
+        `,
+        reply_to: email.trim(),
+      }),
+    });
+
+    const emailData = await emailRes.json();
+
+    if (!emailRes.ok) {
+      console.error("Resend API failed:", emailData);
+      return Response.json(
+        { error: emailData.message || "Failed to deliver email via Resend." },
+        { status: 500 }
+      );
+    }
+
+    console.log("Resend email sent successfully! Message ID:", emailData.id);
+    return Response.json({ success: true, id: emailData.id });
   } catch (err) {
     console.error("Contact API error:", err);
     return Response.json(
