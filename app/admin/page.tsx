@@ -3,7 +3,6 @@
 import { useState, useRef, Suspense, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams, notFound } from "next/navigation";
 import exifr from "exifr";
 import {
   Upload,
@@ -272,11 +271,9 @@ function PhotoCard({
 
 // ─── Main Admin Content ────────────────────────────────────────────────────────
 function AdminContent() {
-  const searchParams = useSearchParams();
-  const secretKey = searchParams.get("key");
+  // URL key protection is handled server-side in middleware.ts
+  // The passkey form below is a second layer of protection
   const validSecret = process.env.NEXT_PUBLIC_ADMIN_SECRET_KEY || "fuji2026";
-
-  if (secretKey !== validSecret) notFound();
 
   // ── Auth
   const [passkey, setPasskey] = useState("");
