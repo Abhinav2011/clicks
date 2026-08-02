@@ -30,7 +30,7 @@ export async function DELETE(request: NextRequest) {
     // ── 1. Fetch photo rows so we know which storage files to delete ──────────
     const { data: photos, error: fetchError } = await admin
       .from("photos")
-      .select("id, web_image_url, thumbnail_url")
+      .select("id, web_image_url, thumbnail_url, original_image_path")
       .in("id", ids);
 
     if (fetchError || !photos) {
@@ -38,13 +38,33 @@ export async function DELETE(request: NextRequest) {
       return Response.json({ error: "Failed to fetch photos." }, { status: 500 });
     }
 
-    // ── 2. Delete from Supabase Storage ──────────────────────────────────────
-    // Extract the storage path (filename) from the public URL
+    // ── 2. Delete from Cloudflare R2 (if configured) ─────────────────────────
+    try {
+      const { isR2Configured, deleteR2Objects, keyFromPublicR2Url } = await import("@/lib/r2");
+      if (isR2Configured()) {
+        const publicKeys: string[] = [];
+        const originalKeys: string[] = [];
+
+        photos.forEach((p) => {
+          if (p.original_image_path) originalKeys.push(p.original_image_path);
+          const webKey = p.web_image_url ? keyFromPublicR2Url(p.web_image_url) : null;
+          const thumbKey = p.thumbnail_url ? keyFromPublicR2Url(p.thumbnail_url) : null;
+          if (webKey) publicKeys.push(webKey);
+          if (thumbKey) publicKeys.push(thumbKey);
+        });
+
+        if (originalKeys.length > 0) await deleteR2Objects(originalKeys, false);
+        if (publicKeys.length > 0) await deleteR2Objects(publicKeys, true);
+      }
+    } catch (r2Err) {
+      console.error("R2 delete error:", r2Err);
+    }
+
+    // ── 3. Delete from Supabase Storage (legacy fallback) ──────────────────────
     const storageKeys: string[] = photos
       .map((p) => {
         try {
           const url = new URL(p.web_image_url);
-          // URL format: .../storage/v1/object/public/photos-web/<filename>
           const parts = url.pathname.split("/photos-web/");
           return parts[1] ?? null;
         } catch {
@@ -59,7 +79,6 @@ export async function DELETE(request: NextRequest) {
         .remove(storageKeys);
 
       if (storageError) {
-        // Log but don't abort — still delete DB rows
         console.error("Supabase Storage delete error:", storageError);
       }
     }

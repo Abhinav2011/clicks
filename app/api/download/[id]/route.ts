@@ -24,7 +24,23 @@ export async function GET(
     }
   }
 
-  // ── Download raw full-resolution file directly from storage ──
+  // ── 1. If R2 original master is present, redirect to R2 signed download URL ──
+  if (photo.original_image_path) {
+    try {
+      const { isR2Configured, createDownloadUrl } = await import("@/lib/r2");
+      if (isR2Configured()) {
+        const ext = photo.original_image_path.split(".").pop() || "jpg";
+        const safeTitle = (photo.title || "stillframe").replace(/[^a-zA-Z0-9 _-]/g, "").trim();
+        const filename = `${safeTitle || "photograph"}.${ext}`;
+        const downloadUrl = await createDownloadUrl(photo.original_image_path, filename);
+        return Response.redirect(downloadUrl, 302);
+      }
+    } catch (r2Err) {
+      console.error("R2 signed download URL error:", r2Err);
+    }
+  }
+
+  // ── 2. Download raw file directly from storage URL (fallback) ──
   try {
     const imageUrl = photo.web_image_url;
     const res = await fetch(imageUrl);
