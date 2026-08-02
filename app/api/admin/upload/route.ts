@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     let title = "Untitled Photo";
     let description: string | null = null;
-    let camera = "Fujifilm X-T5";
+    let camera = "Fujifilm X-T30 II";
     let lens: string | null = null;
     let film_simulation: FilmSimulation | null = null;
     let iso: number | null = null;
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       const json = await request.json();
       title = json.title || "Untitled Photo";
       description = json.description || null;
-      camera = json.camera || "Fujifilm X-T5";
+      camera = json.camera || "Fujifilm X-T30 II";
       lens = json.lens || null;
       film_simulation = json.film_simulation || null;
       iso = json.iso ? Number(json.iso) : null;
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       }
       title = (formData.get("title") as string) || "Untitled Photo";
       description = (formData.get("description") as string) || null;
-      camera = (formData.get("camera") as string) || "Fujifilm X-T5";
+      camera = (formData.get("camera") as string) || "Fujifilm X-T30 II";
       lens = (formData.get("lens") as string) || null;
       film_simulation = (formData.get("film_simulation") as FilmSimulation) || null;
       const isoStr = formData.get("iso") as string;

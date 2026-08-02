@@ -1,23 +1,37 @@
 "use client";
 
 import { useState, useRef, forwardRef } from "react";
+import Image from "next/image";
 import {
   Send,
   Loader2,
   Check,
   AlertCircle,
-  Globe,
-  Code2,
-  Mail,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
+function InstagramSVG() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="w-4 h-4 text-amber group-hover:scale-110 transition-transform flex-shrink-0"
+    >
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  );
+}
+
 const GEAR = [
-  { name: "Fujifilm X-T5", type: "body" },
-  { name: "XF 35mm f/1.4 R", type: "lens" },
-  { name: "XF 23mm f/1.4 R LM WR", type: "lens" },
-  { name: "XF 56mm f/1.2 R", type: "lens" },
-  { name: "XF 18-55mm f/2.8-4", type: "lens" },
+  { name: "Fujifilm X-T30 II", type: "body" },
+  { name: "iPhone 17", type: "body" },
+  { name: "XF 18-55mm f/2.8-4 R LM OIS", type: "lens" },
 ];
 
 /* ── Inline SVG camera body ornament ─────────────────────── */
@@ -128,44 +142,34 @@ const ContactCard = forwardRef<HTMLElement>(function ContactCard(_, ref) {
           </div>
 
           <div className="relative z-10">
-            {/* Avatar — geometric square */}
-            <div
-              className="w-14 h-14 border border-amber rounded-2xl flex items-center justify-center mb-6"
-            >
-              {/* Simple face initials */}
-              <span className="font-serif text-xl font-bold text-amber">AK</span>
+            {/* Avatar Photo — prominent portrait size */}
+            <div className="relative w-32 h-32 sm:w-40 sm:h-40 border-2 border-amber rounded-3xl overflow-hidden mb-6 shadow-xl bg-paper-dark">
+              <Image
+                src="https://images.stillframes.net/IMG_7203.jpg"
+                alt="Abhinav Kumar"
+                fill
+                className="object-cover object-[50%_35%]"
+                sizes="(max-width: 640px) 128px, 160px"
+                priority
+              />
             </div>
 
-            <h2 className="font-serif text-3xl font-bold italic mb-1">
+            <h2 className="font-serif text-3xl font-bold italic mb-4">
               Abhinav Kumar
             </h2>
-            <p className="text-[0.65rem] uppercase tracking-[0.15em] text-paper/50 mb-4 font-sans">
-              Photographer · Developer
-            </p>
-            <p className="text-paper/70 text-sm leading-relaxed mb-8">
-              I capture moments through Fujifilm glass — street scenes, 
-              landscapes, and quiet everyday beauty. Film simulations 
-              are my darkroom.
+            <p className="text-paper/70 text-sm leading-relaxed mb-4">
+              Amateur photographer documenting places, people, and everyday moments. Learning with a Fujifilm.
             </p>
 
-            {/* Social links — flat square buttons */}
-            <div className="flex gap-2 mb-8">
-              {[
-                { icon: Globe, href: "#", label: "Website" },
-                { icon: Code2, href: "#", label: "GitHub" },
-                { icon: Mail, href: "mailto:hello@example.com", label: "Email" },
-              ].map(({ icon: Icon, href, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  aria-label={label}
-                  className="p-2 border border-paper/20 hover:border-amber hover:text-amber
-                             transition-colors duration-150"
-                >
-                  <Icon size={15} strokeWidth={1.8} />
-                </a>
-              ))}
-            </div>
+            <a
+              href="https://instagram.com/ixel_212"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-xs font-sans text-paper/80 hover:text-amber transition-colors mb-8 group"
+            >
+              <InstagramSVG />
+              <span>Connect with me on Instagram <strong className="font-semibold text-amber">@ixel_212</strong></span>
+            </a>
           </div>
 
           {/* Gear list */}
@@ -186,12 +190,9 @@ const ContactCard = forwardRef<HTMLElement>(function ContactCard(_, ref) {
 
         {/* ─── Right panel: Contact Form ─── */}
         <div className="lg:col-span-3 p-8 sm:p-10 bg-paper">
-          <h3 className="font-serif text-2xl font-bold text-ink mb-1">
+          <h3 className="font-serif text-2xl font-bold text-ink mb-8">
             Send a Message
           </h3>
-          <p className="text-xs uppercase tracking-[0.1em] text-ink-muted mb-8 font-sans">
-            Prints · Licensing · Collaborations · Just saying hello
-          </p>
 
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
             {/* Honeypot (hidden from humans & autofill) */}
