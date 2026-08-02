@@ -129,14 +129,14 @@ const ContactCard = forwardRef<HTMLElement>(function ContactCard(_, ref) {
           </div>
 
           <div className="relative z-10">
-            {/* Avatar Photo */}
-            <div className="relative w-16 h-16 border-2 border-amber rounded-2xl overflow-hidden mb-6 shadow-md bg-paper-dark">
+            {/* Avatar Photo — prominent portrait size */}
+            <div className="relative w-32 h-32 sm:w-40 sm:h-40 border-2 border-amber rounded-3xl overflow-hidden mb-6 shadow-xl bg-paper-dark">
               <Image
                 src="https://images.stillframes.net/IMG_7203.jpg"
                 alt="Abhinav Kumar"
                 fill
-                className="object-cover object-top"
-                sizes="64px"
+                className="object-cover object-[50%_35%]"
+                sizes="(max-width: 640px) 128px, 160px"
                 priority
               />
             </div>
