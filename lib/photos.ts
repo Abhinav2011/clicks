@@ -6,7 +6,7 @@ import type { Photo, PaginatedPhotos } from "./types";
 // ══════════════════════════════════════════════════════════
 const SAMPLE_PHOTOS: Photo[] = [
   {
-    id: "1",
+    id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
     title: "Golden Hour at the Coast",
     description:
       "Warm evening light painting the cliffs in gold. Shot with Classic Chrome for that muted, filmic warmth.",
@@ -31,7 +31,7 @@ const SAMPLE_PHOTOS: Photo[] = [
     created_at: "2024-11-15T18:30:00Z",
   },
   {
-    id: "2",
+    id: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
     title: "Neon Alley",
     description:
       "Midnight wander through rain-soaked streets. Classic Neg brings out those deep greens and muted highlights.",
@@ -56,7 +56,7 @@ const SAMPLE_PHOTOS: Photo[] = [
     created_at: "2024-10-22T23:15:00Z",
   },
   {
-    id: "3",
+    id: "1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed",
     title: "Morning Mist",
     description:
       "Early dawn fog settling between mountain ridges. ACROS renders the tonal contrast beautifully.",
@@ -81,7 +81,7 @@ const SAMPLE_PHOTOS: Photo[] = [
     created_at: "2024-09-10T06:45:00Z",
   },
   {
-    id: "4",
+    id: "7c9e6679-7425-40de-944b-e07fc1f90ae7",
     title: "Market Colors",
     description:
       "Vibrant spice stalls at the weekend farmer's market. Velvia really makes those reds pop.",
@@ -106,7 +106,7 @@ const SAMPLE_PHOTOS: Photo[] = [
     created_at: "2024-08-05T10:20:00Z",
   },
   {
-    id: "5",
+    id: "e28f3a14-419b-4977-872e-0b0c609cfa34",
     title: "Solitude",
     description:
       "A lone figure on the pier, lost in thought. The Provia rendition keeps things natural and true.",
@@ -131,7 +131,7 @@ const SAMPLE_PHOTOS: Photo[] = [
     created_at: "2024-07-18T17:00:00Z",
   },
   {
-    id: "6",
+    id: "a3b2c1d0-e4f5-4a6b-8c7d-9e0f1a2b3c4d",
     title: "Autumn Path",
     description:
       "Fallen leaves carpeting a forest trail. Nostalgic Neg gives it that warm, vintage memory feel.",
@@ -156,7 +156,7 @@ const SAMPLE_PHOTOS: Photo[] = [
     created_at: "2024-10-03T14:30:00Z",
   },
   {
-    id: "7",
+    id: "d4c3b2a1-0f9e-4d8c-7b6a-5e4d3c2b1a0f",
     title: "Urban Geometry",
     description:
       "Abstract lines of modern architecture converging. PRO Neg. Hi keeps contrast tight and clinical.",
@@ -181,7 +181,7 @@ const SAMPLE_PHOTOS: Photo[] = [
     created_at: "2024-06-25T12:00:00Z",
   },
   {
-    id: "8",
+    id: "b5a49382-7160-4e5f-9d8c-7b6a5e4d3c2b",
     title: "Quiet Café",
     description:
       "Steam rising from a pour-over. Eterna's cinematic palette turns everyday moments into scenes.",
@@ -206,7 +206,7 @@ const SAMPLE_PHOTOS: Photo[] = [
     created_at: "2024-12-01T09:00:00Z",
   },
   {
-    id: "9",
+    id: "c6b5a493-8271-405f-ae9d-8c7b6a5e4d3c",
     title: "Desert Bloom",
     description:
       "Wildflowers erupting across desert sand after the rains. REALA ACE keeps skin tones and petals true to life.",
@@ -231,7 +231,7 @@ const SAMPLE_PHOTOS: Photo[] = [
     created_at: "2024-04-12T15:45:00Z",
   },
   {
-    id: "10",
+    id: "d7c6b5a4-9382-416f-9d8c-7b6a5e4d3c2b",
     title: "The Waiting Room",
     description:
       "Bleached light pouring through old windows. Eterna Bleach Bypass strips the scene of saturation.",
@@ -256,7 +256,7 @@ const SAMPLE_PHOTOS: Photo[] = [
     created_at: "2024-03-08T11:30:00Z",
   },
   {
-    id: "11",
+    id: "e8d7c6b5-a493-427f-a0ae-8c7b6a5e4d3c",
     title: "Sunset Silhouettes",
     description:
       "Trees framing a burning sunset sky. Astia softens the transition between light and shadow.",
@@ -281,7 +281,7 @@ const SAMPLE_PHOTOS: Photo[] = [
     created_at: "2024-05-20T19:15:00Z",
   },
   {
-    id: "12",
+    id: "f9e8d7c6-b5a4-438f-b1bf-9c8d7e6f5a4b",
     title: "Rainy Window",
     description:
       "Droplets on glass, city lights bleeding through. Classic Chrome feels right for this melancholy mood.",

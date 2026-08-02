@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Download } from "lucide-react";
+import { Download, Share2 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Photo } from "@/lib/types";
 import { FILM_SIM_COLORS } from "@/lib/types";
@@ -16,6 +16,17 @@ export default function PhotoCard({ photo, index, onClick }: PhotoCardProps) {
   const filmColor = photo.film_simulation
     ? FILM_SIM_COLORS[photo.film_simulation]
     : null;
+
+  const handleCopyDirectLink = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/photo/${photo.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      alert("Direct photo link copied to clipboard!");
+    } catch {
+      // fallback
+    }
+  };
 
   return (
     <motion.div
@@ -66,18 +77,30 @@ export default function PhotoCard({ photo, index, onClick }: PhotoCardProps) {
               )}
             </div>
 
-            {/* Quick download — flat square button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(`/api/download/${photo.id}`, "_blank");
-              }}
-              className="p-1.5 bg-paper/20 hover:bg-amber transition-colors duration-150
-                         border border-white/30 hover:border-amber"
-              aria-label={`Download ${photo.title}`}
-            >
-              <Download size={14} className="text-paper" strokeWidth={2} />
-            </button>
+            {/* Quick actions: Share link & Download */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleCopyDirectLink}
+                className="p-1.5 bg-paper/20 hover:bg-amber transition-colors duration-150
+                           border border-white/30 hover:border-amber"
+                title="Copy Direct Link for Pinterest / Sharing"
+                aria-label={`Copy link for ${photo.title}`}
+              >
+                <Share2 size={13} className="text-paper" strokeWidth={2} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(`/api/download/${photo.id}`, "_blank");
+                }}
+                className="p-1.5 bg-paper/20 hover:bg-amber transition-colors duration-150
+                           border border-white/30 hover:border-amber"
+                title="Download Full Resolution"
+                aria-label={`Download ${photo.title}`}
+              >
+                <Download size={13} className="text-paper" strokeWidth={2} />
+              </button>
+            </div>
           </div>
         </div>
       </div>

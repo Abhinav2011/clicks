@@ -24,17 +24,29 @@ export default function MasonryGrid({
   const openModal = (photo: Photo, index: number) => {
     setSelectedPhoto(photo);
     setSelectedIndex(index);
+    if (typeof window !== "undefined") {
+      window.history.pushState({ photoId: photo.id }, "", `/photo/${photo.id}`);
+    }
   };
 
-  const closeModal = () => setSelectedPhoto(null);
+  const closeModal = () => {
+    setSelectedPhoto(null);
+    if (typeof window !== "undefined") {
+      window.history.pushState({}, "", "/");
+    }
+  };
 
   const navigateModal = (direction: "prev" | "next") => {
     const newIndex =
       direction === "next"
         ? Math.min(selectedIndex + 1, photos.length - 1)
         : Math.max(selectedIndex - 1, 0);
+    const targetPhoto = photos[newIndex];
     setSelectedIndex(newIndex);
-    setSelectedPhoto(photos[newIndex]);
+    setSelectedPhoto(targetPhoto);
+    if (typeof window !== "undefined" && targetPhoto) {
+      window.history.replaceState({ photoId: targetPhoto.id }, "", `/photo/${targetPhoto.id}`);
+    }
   };
 
   if (photos.length === 0) {

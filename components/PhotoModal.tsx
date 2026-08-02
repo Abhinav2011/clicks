@@ -16,6 +16,7 @@ import {
   Share2,
   ZoomIn,
   ZoomOut,
+  ExternalLink,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Photo } from "@/lib/types";
@@ -69,16 +70,27 @@ export default function PhotoModal({
     ? FILM_SIM_COLORS[photo.film_simulation]
     : null;
 
+  const photoShareUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/photo/${photo.id}`
+    : `/photo/${photo.id}`;
+
   const handleShare = async () => {
-    const url = window.location.href;
     if (navigator.share) {
-      await navigator.share({ title: photo.title, url });
+      await navigator.share({ title: photo.title, url: photoShareUrl });
     } else {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(photoShareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  const pinterestShareUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(
+    photoShareUrl
+  )}&media=${encodeURIComponent(
+    photo.web_image_url
+  )}&description=${encodeURIComponent(
+    `${photo.title || "Fujifilm Photograph"} — Shot on ${photo.camera || "Fujifilm"}`
+  )}`;
 
   // ── EXIF items ──
   const exifItems = [
@@ -261,27 +273,42 @@ export default function PhotoModal({
               )}
 
               {/* Actions */}
-              <div className="flex gap-2 mt-auto pt-2">
+              <div className="flex flex-col gap-2 mt-auto pt-2">
                 <a
                   href={`/api/download/${photo.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5
-                             rounded-full border border-amber bg-amber text-paper text-xs font-semibold uppercase tracking-[0.08em] font-sans
-                             hover:bg-amber-dark transition-all duration-150"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-2.5
+                             border-2 border-ink bg-ink text-paper text-xs font-semibold uppercase tracking-[0.08em] font-sans
+                             hover:bg-paper hover:text-ink transition-all duration-150"
                 >
                   <Download size={14} strokeWidth={2} />
-                  Download
+                  Download Full Res
                 </a>
-                <button
-                  onClick={handleShare}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5
-                             rounded-full border border-border text-ink-muted text-xs font-semibold uppercase tracking-[0.08em] font-sans
-                             hover:border-amber hover:text-amber-dark transition-all duration-150"
-                >
-                  <Share2 size={14} strokeWidth={2} />
-                  {copied ? "Copied!" : "Share"}
-                </button>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <a
+                    href={pinterestShareUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-1.5 px-3 py-2
+                               border-2 border-red-600 bg-red-600 text-white text-xs font-semibold uppercase tracking-[0.06em] font-sans
+                               hover:bg-red-700 transition-colors duration-150"
+                  >
+                    <ExternalLink size={13} />
+                    Pin it
+                  </a>
+
+                  <button
+                    onClick={handleShare}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2
+                               border-2 border-border text-ink-muted text-xs font-semibold uppercase tracking-[0.06em] font-sans
+                               hover:border-amber hover:text-amber-dark transition-all duration-150"
+                  >
+                    <Share2 size={13} strokeWidth={2} />
+                    {copied ? "Copied!" : "Link"}
+                  </button>
+                </div>
               </div>
 
               {/* Download count */}
