@@ -1,27 +1,4 @@
-import { Camera, Heart } from "lucide-react";
+import { Aperture, ArrowUpRight } from "lucide-react";
+import Link from "next/link";
 
-export default function Footer() {
-  return (
-    <footer className="border-t border-border-subtle bg-paper-alt/50">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Brand */}
-          <div className="flex items-center gap-2 text-ink-muted">
-            <Camera size={16} strokeWidth={1.5} />
-            <span className="font-serif text-sm">Clicks</span>
-            <span className="text-xs">
-              © {new Date().getFullYear()}
-            </span>
-          </div>
-
-          {/* Made with love */}
-          <p className="flex items-center gap-1 text-xs text-ink-muted">
-            Made with
-            <Heart size={12} className="text-amber fill-amber" />
-            and a Fujifilm
-          </p>
-        </div>
-      </div>
-    </footer>
-  );
-}
+export default function Footer() { return <footer className="site-footer"><div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10 py-10"><div className="footer-top"><div><p className="footer-kicker">THE ROLL KEEPS TURNING</p><h2>Made for<br /><i>looking closer.</i></h2></div><Link href="/contact" className="footer-link">Start a conversation <ArrowUpRight size={19} /></Link></div><div className="footer-bottom"><span className="brand"><span className="brand-mark"><Aperture size={17} /></span>CLICKS</span><span>© {new Date().getFullYear()} · ABHINAV KUMAR</span><span>SHOT WITH FUJIFILM</span></div></div></footer>; }

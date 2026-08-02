@@ -103,16 +103,17 @@ export default function PhotoModal({
         onClick={(e) => e.target === overlayRef.current && onClose()}
       >
         {/* Backdrop */}
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-ink/85" />
 
         {/* Modal container */}
         <motion.div
           className="relative z-10 flex flex-col lg:flex-row w-full max-w-6xl max-h-[90vh]
-                     bg-paper rounded-xl overflow-hidden shadow-xl"
-          initial={{ scale: 0.95, opacity: 0 }}
+                     bg-paper border-2 border-ink overflow-hidden
+                     shadow-[8px_8px_0_var(--color-amber-dark)]"
+          initial={{ scale: 0.97, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
+          exit={{ scale: 0.97, opacity: 0 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
         >
           {/* ─── Left: Image ─── */}
           <div
@@ -135,8 +136,8 @@ export default function PhotoModal({
             {/* Zoom toggle */}
             <button
               onClick={() => setZoomed(!zoomed)}
-              className="absolute bottom-3 right-3 p-2 rounded-full bg-white/10
-                         hover:bg-white/20 backdrop-blur-sm transition-colors"
+              className="absolute bottom-3 right-3 p-1.5 border border-white/30
+                         bg-white/10 hover:bg-amber hover:border-amber transition-colors"
               aria-label={zoomed ? "Zoom out" : "Zoom in"}
             >
               {zoomed ? (
@@ -150,8 +151,9 @@ export default function PhotoModal({
             {onPrev && (
               <button
                 onClick={onPrev}
-                className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full
-                           bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-colors"
+                className="absolute left-3 top-1/2 -translate-y-1/2 p-2
+                           bg-white/10 hover:bg-amber border border-white/20 hover:border-amber
+                           transition-colors"
                 aria-label="Previous photo"
               >
                 <ChevronLeft size={20} className="text-white" />
@@ -160,8 +162,9 @@ export default function PhotoModal({
             {onNext && (
               <button
                 onClick={onNext}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full
-                           bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2
+                           bg-white/10 hover:bg-amber border border-white/20 hover:border-amber
+                           transition-colors"
                 aria-label="Next photo"
               >
                 <ChevronRight size={20} className="text-white" />
@@ -172,13 +175,13 @@ export default function PhotoModal({
           {/* ─── Right: Info Panel ─── */}
           <div className="w-full lg:w-[340px] flex flex-col overflow-y-auto">
             {/* Close */}
-            <div className="flex justify-end p-3">
+            <div className="flex justify-end p-3 border-b border-border-subtle">
               <button
                 onClick={onClose}
-                className="p-2 rounded-full hover:bg-paper-alt transition-colors"
+                className="p-1.5 border border-border hover:border-ink hover:bg-paper-alt transition-colors"
                 aria-label="Close"
               >
-                <X size={18} className="text-ink-muted" />
+                <X size={16} className="text-ink-muted" />
               </button>
             </div>
 
@@ -248,8 +251,8 @@ export default function PhotoModal({
                   {photo.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="px-2.5 py-1 rounded-full bg-paper-alt text-ink-muted
-                                 text-[0.65rem] font-medium capitalize"
+                      className="px-2 py-0.5 border border-border bg-paper-alt text-ink-muted
+                                 text-[0.62rem] font-medium capitalize uppercase tracking-[0.06em] font-sans"
                     >
                       {tag}
                     </span>
@@ -264,19 +267,19 @@ export default function PhotoModal({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5
-                             rounded-lg bg-ink text-paper text-sm font-medium
-                             hover:bg-ink-light transition-colors duration-200"
+                             border-2 border-ink bg-ink text-paper text-xs font-semibold uppercase tracking-[0.08em] font-sans
+                             hover:bg-paper hover:text-ink transition-all duration-150"
                 >
-                  <Download size={15} strokeWidth={1.8} />
+                  <Download size={14} strokeWidth={2} />
                   Download
                 </a>
                 <button
                   onClick={handleShare}
                   className="flex items-center justify-center gap-2 px-4 py-2.5
-                             rounded-lg border border-border text-ink-muted text-sm font-medium
-                             hover:border-amber hover:text-amber-dark transition-all duration-200"
+                             border-2 border-border text-ink-muted text-xs font-semibold uppercase tracking-[0.08em] font-sans
+                             hover:border-amber hover:text-amber-dark transition-all duration-150"
                 >
-                  <Share2 size={15} strokeWidth={1.8} />
+                  <Share2 size={14} strokeWidth={2} />
                   {copied ? "Copied!" : "Share"}
                 </button>
               </div>

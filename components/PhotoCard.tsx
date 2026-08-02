@@ -19,15 +19,15 @@ export default function PhotoCard({ photo, index, onClick }: PhotoCardProps) {
 
   return (
     <motion.div
-      className="masonry-item group cursor-pointer"
-      initial={{ opacity: 0, y: 20 }}
+      className="masonry-item group cursor-pointer photo-card-wrap"
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: index * 0.04, ease: "easeOut" }}
+      transition={{ duration: 0.4, delay: index * 0.04, ease: "easeOut" }}
       layout
     >
+      {/* Card border — vector flat style */}
       <div
-        className="relative overflow-hidden rounded-lg shadow-sm hover:shadow-lg
-                    transition-shadow duration-300"
+        className="relative overflow-hidden border border-border bg-paper-alt"
         onClick={onClick}
       >
         {/* Image */}
@@ -36,58 +36,54 @@ export default function PhotoCard({ photo, index, onClick }: PhotoCardProps) {
           alt={photo.title || "Photograph"}
           width={photo.width}
           height={photo.height}
-          className="w-full h-auto object-cover transition-transform duration-500
-                     group-hover:scale-[1.03]"
+          className="w-full h-auto object-cover transition-transform duration-400
+                     group-hover:scale-[1.02]"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1400px) 33vw, 25vw"
         />
 
-        {/* Hover overlay */}
+        {/* Hover overlay — editorial dark wash */}
         <div
-          className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent
-                      opacity-0 group-hover:opacity-100 transition-opacity duration-300
-                      flex flex-col justify-end p-4"
+          className="absolute inset-0 bg-ink/70
+                      opacity-0 group-hover:opacity-100 transition-opacity duration-250
+                      flex flex-col justify-end p-3.5"
         >
           {/* Title */}
-          <h3 className="text-white font-serif text-lg font-medium leading-tight mb-1">
+          <h3 className="text-paper font-serif text-base font-semibold leading-tight mb-1.5">
             {photo.title}
           </h3>
 
           {/* Meta row */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {/* Film simulation badge */}
+            <div className="flex items-center gap-1.5">
+              {/* Film simulation badge — flat chip */}
               {photo.film_simulation && filmColor && (
                 <span
                   className="film-badge"
                   style={{ backgroundColor: filmColor }}
                 >
-                  <span
-                    className="w-1.5 h-1.5 rounded-full bg-white/80"
-                    aria-hidden="true"
-                  />
                   {photo.film_simulation}
                 </span>
               )}
             </div>
 
-            {/* Quick download */}
+            {/* Quick download — flat square button */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 window.open(`/api/download/${photo.id}`, "_blank");
               }}
-              className="p-2 rounded-full bg-white/20 hover:bg-white/40
-                         backdrop-blur-sm transition-colors duration-200"
+              className="p-1.5 bg-paper/20 hover:bg-amber transition-colors duration-150
+                         border border-white/30 hover:border-amber"
               aria-label={`Download ${photo.title}`}
             >
-              <Download size={16} className="text-white" strokeWidth={1.8} />
+              <Download size={14} className="text-paper" strokeWidth={2} />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Below-card info (always visible on mobile) */}
-      <div className="mt-2 px-0.5 md:hidden">
+      {/* Below-card label — always visible on mobile */}
+      <div className="mt-1.5 px-0.5 md:hidden">
         <p className="font-serif text-sm text-ink font-medium truncate">
           {photo.title}
         </p>
