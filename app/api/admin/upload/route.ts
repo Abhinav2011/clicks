@@ -12,10 +12,9 @@ export async function POST(request: NextRequest) {
       process.env.ADMIN_PASSKEY,
       process.env.ADMIN_SECRET_KEY,
       process.env.NEXT_PUBLIC_ADMIN_SECRET_KEY,
-      "fuji2026",
     ].filter(Boolean) as string[];
 
-    if (!passkeyHeader || !validPasskeys.includes(passkeyHeader)) {
+    if (!passkeyHeader || validPasskeys.length === 0 || !validPasskeys.includes(passkeyHeader)) {
       return Response.json(
         { error: "Unauthorized. Invalid admin passkey." },
         { status: 401 }

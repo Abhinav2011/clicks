@@ -384,11 +384,10 @@ function ManagePanel({ passkey }: { passkey: string }) {
 
 // ─── Main Admin Content ────────────────────────────────────────────────────────
 function AdminContent() {
-  const validSecret = process.env.NEXT_PUBLIC_ADMIN_SECRET_KEY || "fuji2026";
-
   const [passkey, setPasskey] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passkeyError, setPasskeyError] = useState("");
+  const [verifying, setVerifying] = useState(false);
   const [activeTab, setActiveTab] = useState<"upload" | "manage">("upload");
 
   // ── Upload queue state
@@ -398,11 +397,28 @@ function AdminContent() {
   const [uploading, setUploading] = useState(false);
   const [uploadDone, setUploadDone] = useState(false);
 
-  const handleAuthenticate = (e: React.FormEvent) => {
+  const handleAuthenticate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!passkey.trim()) { setPasskeyError("Please enter your admin passkey."); return; }
-    setIsAuthenticated(true);
+    setVerifying(true);
     setPasskeyError("");
+    try {
+      const res = await fetch("/api/admin/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passkey: passkey.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok && data.valid) {
+        setIsAuthenticated(true);
+      } else {
+        setPasskeyError(data.error || "Invalid passkey.");
+      }
+    } catch {
+      setPasskeyError("Verification failed. Please try again.");
+    } finally {
+      setVerifying(false);
+    }
   };
 
   const addFiles = useCallback(async (files: File[]) => {
@@ -451,7 +467,7 @@ function AdminContent() {
         formData.append("location", item.location.trim());
         formData.append("tags", item.tags.trim());
         const res = await fetch("/api/admin/upload", {
-          method: "POST", headers: { "x-admin-passkey": passkey || validSecret }, body: formData,
+          method: "POST", headers: { "x-admin-passkey": passkey }, body: formData,
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Upload failed.");
@@ -494,8 +510,8 @@ function AdminContent() {
             <input type="password" value={passkey} onChange={(e) => setPasskey(e.target.value)} placeholder="Enter passkey" autoFocus
               className="w-full px-4 py-3 rounded-lg border border-border bg-paper-alt/50 text-ink text-sm text-center placeholder:text-ink-muted/50 focus:outline-none focus:border-amber focus:ring-2 focus:ring-amber/20" />
             {passkeyError && <p className="text-xs text-red-500 font-medium">{passkeyError}</p>}
-            <button type="submit" className="w-full py-3 rounded-lg bg-ink text-paper text-sm font-medium hover:bg-ink-light transition-colors duration-200">
-              Access Admin Portal
+            <button type="submit" disabled={verifying} className="w-full py-3 rounded-lg bg-ink text-paper text-sm font-medium hover:bg-ink-light transition-colors duration-200 flex items-center justify-center gap-2 disabled:opacity-60">
+              {verifying ? <><Loader2 size={16} className="animate-spin" /> Verifying Passkey...</> : "Access Admin Portal"}
             </button>
           </form>
         </div>
@@ -598,7 +614,7 @@ function AdminContent() {
           )}
 
           {/* ── MANAGE TAB ───────────────────────────────────────── */}
-          {activeTab === "manage" && <ManagePanel passkey={passkey || validSecret} />}
+          {activeTab === "manage" && <ManagePanel passkey={passkey} />}
         </div>
       )}
     </main>
