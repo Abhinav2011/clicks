@@ -7,9 +7,6 @@ import {
   Loader2,
   Check,
   AlertCircle,
-  Globe,
-  Code2,
-  Mail,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -145,25 +142,6 @@ const ContactCard = forwardRef<HTMLElement>(function ContactCard(_, ref) {
             <p className="text-paper/70 text-sm leading-relaxed mb-8">
               Amateur photographer documenting places, people, and everyday moments. Learning with a Fujifilm.
             </p>
-
-            {/* Social links — flat square buttons */}
-            <div className="flex gap-2 mb-8">
-              {[
-                { icon: Globe, href: "#", label: "Website" },
-                { icon: Code2, href: "#", label: "GitHub" },
-                { icon: Mail, href: "mailto:hello@example.com", label: "Email" },
-              ].map(({ icon: Icon, href, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  aria-label={label}
-                  className="p-2 border border-paper/20 hover:border-amber hover:text-amber
-                             transition-colors duration-150"
-                >
-                  <Icon size={15} strokeWidth={1.8} />
-                </a>
-              ))}
-            </div>
           </div>
 
           {/* Gear list */}
