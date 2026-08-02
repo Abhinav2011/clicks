@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Photo } from "@/lib/types";
 import PhotoCard from "./PhotoCard";
 import PhotoModal from "./PhotoModal";
@@ -20,6 +20,26 @@ export default function MasonryGrid({
 }: MasonryGridProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [columnCount, setColumnCount] = useState(3);
+
+  useEffect(() => {
+    const updateColumns = () => {
+      const w = window.innerWidth;
+      if (w < 640) {
+        setColumnCount(1);
+      } else if (w < 1024) {
+        setColumnCount(2);
+      } else if (w < 1400 || photos.length <= 6) {
+        setColumnCount(Math.min(3, Math.max(1, photos.length)));
+      } else {
+        setColumnCount(4);
+      }
+    };
+
+    updateColumns();
+    window.addEventListener("resize", updateColumns);
+    return () => window.removeEventListener("resize", updateColumns);
+  }, [photos.length]);
 
   const openModal = (photo: Photo, index: number) => {
     setSelectedPhoto(photo);
@@ -73,16 +93,32 @@ export default function MasonryGrid({
     );
   }
 
+  // Distribute photos left-to-right (round-robin) across active columns
+  const safeCols = Math.max(1, columnCount);
+  const columns = Array.from({ length: safeCols }, () => [] as { photo: Photo; originalIndex: number }[]);
+  photos.forEach((photo, index) => {
+    columns[index % safeCols].push({ photo, originalIndex: index });
+  });
+
   return (
     <>
-      <div className="masonry-grid">
-        {photos.map((photo, i) => (
-          <PhotoCard
-            key={photo.id}
-            photo={photo}
-            index={i}
-            onClick={() => openModal(photo, i)}
-          />
+      <div
+        className="grid gap-[18px] items-start"
+        style={{
+          gridTemplateColumns: `repeat(${safeCols}, minmax(0, 1fr))`,
+        }}
+      >
+        {columns.map((col, colIdx) => (
+          <div key={colIdx} className="flex flex-col gap-[18px]">
+            {col.map(({ photo, originalIndex }) => (
+              <PhotoCard
+                key={photo.id}
+                photo={photo}
+                index={originalIndex}
+                onClick={() => openModal(photo, originalIndex)}
+              />
+            ))}
+          </div>
         ))}
       </div>
 
