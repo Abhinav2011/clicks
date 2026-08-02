@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Camera, Sparkles } from "lucide-react";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import MasonryGrid from "@/components/MasonryGrid";
@@ -13,11 +12,9 @@ function ArchiveIntro({ activeTag, tags, onTagChange }: { activeTag: string | nu
       <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
         <div className="archive-intro__inner">
           <div className="archive-intro__copy">
-            <p className="archive-kicker"><Camera size={14} /> A quiet Fujifilm photo diary</p>
             <h1>Still Frames, collected slowly.</h1>
             <p>Small moments from walks, weekends, and everywhere in between.</p>
           </div>
-          <div className="archive-intro__note"><Sparkles size={15} /><span>Made with a little<br />more time to look.</span></div>
         </div>
         {tags.length > 0 && (
           <div className="archive-filters" aria-label="Filter photographs">
