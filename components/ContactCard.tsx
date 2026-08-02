@@ -162,12 +162,9 @@ const ContactCard = forwardRef<HTMLElement>(function ContactCard(_, ref) {
 
         {/* ─── Right panel: Contact Form ─── */}
         <div className="lg:col-span-3 p-8 sm:p-10 bg-paper">
-          <h3 className="font-serif text-2xl font-bold text-ink mb-1">
+          <h3 className="font-serif text-2xl font-bold text-ink mb-8">
             Send a Message
           </h3>
-          <p className="text-xs uppercase tracking-[0.1em] text-ink-muted mb-8 font-sans">
-            Prints · Licensing · Collaborations · Just saying hello
-          </p>
 
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
             {/* Honeypot (hidden from humans & autofill) */}
