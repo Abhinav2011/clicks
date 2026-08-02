@@ -51,6 +51,23 @@ export async function POST(request: NextRequest) {
     const fileExt = path.extname(file.name) || ".jpg";
     const uniqueFilename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}${fileExt}`;
 
+    let imageWidth = 3840;
+    let imageHeight = 2560;
+    try {
+      const exifr = await import("exifr");
+      const dim = await exifr.parse(fileBuffer, ["ExifImageWidth", "ExifImageHeight", "ImageWidth", "ImageHeight"]);
+      if (dim) {
+        const w = dim.ExifImageWidth || dim.ImageWidth;
+        const h = dim.ExifImageHeight || dim.ImageHeight;
+        if (w && h) {
+          imageWidth = Number(w);
+          imageHeight = Number(h);
+        }
+      }
+    } catch (e) {
+      console.log("Could not extract image dimensions:", e);
+    }
+
     let web_image_url = "";
     let thumbnail_url = "";
 
@@ -88,8 +105,8 @@ export async function POST(request: NextRequest) {
           description,
           web_image_url,
           thumbnail_url,
-          width: 1200,
-          height: 800,
+          width: imageWidth,
+          height: imageHeight,
           camera,
           lens,
           film_simulation,
