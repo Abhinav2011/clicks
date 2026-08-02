@@ -478,18 +478,26 @@ function AdminContent() {
             const presignData = await presignRes.json();
             const { uploadUrls, publicUrls, keys } = presignData;
 
+            console.log(`[R2 Upload] File: ${item.file.name} | Original size: ${item.file.size} bytes (${(item.file.size / (1024 * 1024)).toFixed(2)} MB)`);
+
             // Generate web (2560px) and thumbnail (960px) JPEG blobs in browser
             const [webBlob, thumbBlob] = await Promise.all([
               resizeImageToBlob(item.file, 2560, 0.92).catch(() => item.file),
               resizeImageToBlob(item.file, 960, 0.85).catch(() => item.file),
             ]);
 
+            console.log(`[R2 Upload] Web blob: ${webBlob.size} bytes | Thumbnail blob: ${thumbBlob.size} bytes`);
+
             // Upload 3 tiers directly to Cloudflare R2 (bypasses Vercel body limits)
-            await Promise.all([
+            const [origRes, webRes, thumbRes] = await Promise.all([
               fetch(uploadUrls.original, { method: "PUT", headers: { "Content-Type": item.file.type || "image/jpeg" }, body: item.file }),
               fetch(uploadUrls.web, { method: "PUT", headers: { "Content-Type": "image/jpeg", "Cache-Control": "public, max-age=31536000, immutable" }, body: webBlob }),
               fetch(uploadUrls.thumbnail, { method: "PUT", headers: { "Content-Type": "image/jpeg", "Cache-Control": "public, max-age=31536000, immutable" }, body: thumbBlob }),
             ]);
+
+            if (!origRes.ok || !webRes.ok || !thumbRes.ok) {
+              throw new Error(`R2 direct upload failed. Statuses: Orig ${origRes.status}, Web ${webRes.status}, Thumb ${thumbRes.status}`);
+            }
 
             // Save metadata row to Supabase DB
             const saveRes = await fetch("/api/admin/upload", {
