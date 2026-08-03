@@ -103,7 +103,7 @@ export default function PhotoModal({
     <AnimatePresence>
       <motion.div
         ref={overlayRef}
-        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
+        className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -111,22 +111,31 @@ export default function PhotoModal({
         onClick={(e) => e.target === overlayRef.current && onClose()}
       >
         {/* Backdrop */}
-        <div className="absolute inset-0 bg-[#14100d]/88 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-[#0f172a]/80 backdrop-blur-md" />
 
         {/* Modal container */}
         <motion.div
-          className="relative z-10 flex flex-col lg:flex-row w-full max-w-6xl max-h-[92vh]
-                     bg-paper-card border-2 border-ink rounded-lg overflow-hidden
-                     shadow-[8px_12px_32px_rgba(43,36,31,0.45)]"
+          className="relative z-10 flex flex-col lg:flex-row w-full max-w-6xl max-h-[95dvh] lg:max-h-[90vh]
+                     bg-paper-card border border-border rounded-xl overflow-hidden
+                     shadow-2xl overflow-y-auto lg:overflow-y-visible"
           initial={{ scale: 0.97, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.97, opacity: 0 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
         >
+          {/* Mobile Top Close Bar */}
+          <button
+            onClick={onClose}
+            className="lg:hidden absolute top-3 right-3 z-30 p-2 rounded-full bg-black/60 text-white hover:bg-black transition-colors"
+            aria-label="Close photo"
+          >
+            <X size={18} />
+          </button>
+
           {/* ─── Left: Image ─── */}
           <div
-            className="relative flex-1 min-h-[300px] lg:min-h-0 bg-[#1b1714] flex items-center
-                       justify-center overflow-hidden p-3"
+            className="relative flex-1 min-h-[260px] sm:min-h-[340px] lg:min-h-0 bg-[#141210] flex items-center
+                       justify-center overflow-hidden p-2 sm:p-4"
           >
             <Image
               src={photo.web_image_url}

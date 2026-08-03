@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Photo } from "@/lib/types";
 import PhotoCard from "./PhotoCard";
 import PhotoModal from "./PhotoModal";
@@ -10,6 +10,10 @@ interface MasonryGridProps {
   hasMore: boolean;
   onLoadMore: () => void;
   loading: boolean;
+  currentPage?: number;
+  totalPhotos?: number;
+  pageSize?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export default function MasonryGrid({
@@ -17,10 +21,15 @@ export default function MasonryGrid({
   hasMore,
   onLoadMore,
   loading,
+  currentPage = 1,
+  totalPhotos = 0,
+  pageSize = 24,
+  onPageChange,
 }: MasonryGridProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [columnCount, setColumnCount] = useState(3);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const updateColumns = () => {
@@ -40,6 +49,27 @@ export default function MasonryGrid({
     window.addEventListener("resize", updateColumns);
     return () => window.removeEventListener("resize", updateColumns);
   }, [photos.length]);
+
+  // Desktop Infinite Scroll Observer
+  useEffect(() => {
+    if (typeof window === "undefined" || !hasMore || loading) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && window.innerWidth >= 640) {
+          onLoadMore();
+        }
+      },
+      { rootMargin: "300px" }
+    );
+
+    const el = sentinelRef.current;
+    if (el) observer.observe(el);
+
+    return () => {
+      if (el) observer.unobserve(el);
+    };
+  }, [hasMore, loading, onLoadMore]);
 
   const openModal = (photo: Photo, index: number) => {
     setSelectedPhoto(photo);
@@ -72,7 +102,6 @@ export default function MasonryGrid({
   if (photos.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        {/* Vector camera ornament */}
         <svg
           viewBox="0 0 64 48"
           fill="none"
@@ -100,6 +129,8 @@ export default function MasonryGrid({
     columns[index % safeCols].push({ photo, originalIndex: index });
   });
 
+  const totalPages = Math.ceil(totalPhotos / pageSize);
+
   return (
     <>
       <div
@@ -122,28 +153,42 @@ export default function MasonryGrid({
         ))}
       </div>
 
-      {/* Load more — flat vector button */}
+      {/* Desktop Automatic Infinite Scroll Sentinel & Loader (>= 640px) */}
       {hasMore && (
-        <div className="flex justify-center mt-12">
-          <button
-            onClick={onLoadMore}
-            disabled={loading}
-            className="px-7 py-3 rounded-full border border-border bg-paper-alt text-ink font-sans text-xs font-semibold
-                       tracking-[0.04em]
-                       hover:bg-amber hover:text-paper hover:border-amber
-                       transition-all duration-150
-                       disabled:opacity-40 disabled:cursor-not-allowed
-                       hover:-translate-y-0.5"
-          >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                Loading…
-              </span>
-            ) : (
-              "Load more photos"
-            )}
-          </button>
+        <div ref={sentinelRef} className="hidden sm:flex justify-center items-center py-10 mt-6">
+          <div className="flex items-center gap-2.5 text-ink-light font-sans text-xs font-medium bg-paper-alt px-4 py-2 rounded-full border border-border">
+            <span className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+            <span>Loading more photographs…</span>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Pagination Controls (Visible only on Mobile < 640px) */}
+      {totalPages > 1 && onPageChange && (
+        <div className="flex sm:hidden flex-col items-center gap-3 mt-8 pt-6 border-t border-border">
+          <div className="flex items-center justify-between w-full gap-3">
+            <button
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage <= 1 || loading}
+              className="flex-1 py-2.5 px-4 rounded-lg border border-border bg-paper-card text-ink font-sans text-xs font-semibold
+                         disabled:opacity-40 disabled:cursor-not-allowed hover:bg-paper-alt transition-colors shadow-sm"
+            >
+              ← Previous
+            </button>
+
+            <span className="text-xs font-semibold text-ink-muted whitespace-nowrap px-2">
+              Page {currentPage} of {totalPages}
+            </span>
+
+            <button
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages || loading}
+              className="flex-1 py-2.5 px-4 rounded-lg border border-border bg-paper-card text-ink font-sans text-xs font-semibold
+                         disabled:opacity-40 disabled:cursor-not-allowed hover:bg-paper-alt transition-colors shadow-sm"
+            >
+              Next →
+            </button>
+          </div>
         </div>
       )}
 
@@ -163,3 +208,4 @@ export default function MasonryGrid({
     </>
   );
 }
+

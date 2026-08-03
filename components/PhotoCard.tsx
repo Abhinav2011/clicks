@@ -29,7 +29,7 @@ export default function PhotoCard({ photo, index, onClick }: PhotoCardProps) {
 
   return (
     <motion.div
-      className={`masonry-item group cursor-pointer ${cardTilt}`}
+      className={`masonry-item group cursor-pointer sm:${cardTilt}`}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.03, ease: "easeOut" }}
