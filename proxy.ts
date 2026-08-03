@@ -9,7 +9,6 @@ export function proxy(request: NextRequest) {
     const validKeys = [
       process.env.ADMIN_SECRET_KEY,
       process.env.ADMIN_PASSKEY,
-      process.env.NEXT_PUBLIC_ADMIN_SECRET_KEY,
     ].filter(Boolean) as string[];
 
     const providedKey = searchParams.get("key");

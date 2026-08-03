@@ -10,7 +10,6 @@ export async function POST(request: NextRequest) {
     const validPasskeys = [
       process.env.ADMIN_PASSKEY,
       process.env.ADMIN_SECRET_KEY,
-      process.env.NEXT_PUBLIC_ADMIN_SECRET_KEY,
     ].filter(Boolean) as string[];
 
     if (!passkeyHeader || validPasskeys.length === 0 || !validPasskeys.includes(passkeyHeader)) {
