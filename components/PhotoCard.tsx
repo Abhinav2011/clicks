@@ -1,10 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { Download, Share2 } from "lucide-react";
+import { Download, Share2, Camera } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Photo } from "@/lib/types";
-import { FILM_SIM_COLORS } from "@/lib/types";
 
 interface PhotoCardProps {
   photo: Photo;
@@ -13,10 +12,6 @@ interface PhotoCardProps {
 }
 
 export default function PhotoCard({ photo, index, onClick }: PhotoCardProps) {
-  const filmColor = photo.film_simulation
-    ? FILM_SIM_COLORS[photo.film_simulation]
-    : null;
-
   const handleCopyDirectLink = async (e: React.MouseEvent) => {
     e.stopPropagation();
     const url = `${window.location.origin}/photo/${photo.id}`;
@@ -28,96 +23,91 @@ export default function PhotoCard({ photo, index, onClick }: PhotoCardProps) {
     }
   };
 
+  // Add slight random-feeling tilt to photo cards for analog paper layout vibe
+  const tilts = ["rotate-[0.4deg]", "-rotate-[0.5deg]", "rotate-[0.8deg]", "-rotate-[0.3deg]"];
+  const cardTilt = tilts[index % tilts.length];
+
   return (
     <motion.div
-      className="masonry-item group cursor-pointer photo-card-wrap"
+      className={`masonry-item group cursor-pointer ${cardTilt}`}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.04, ease: "easeOut" }}
+      transition={{ duration: 0.35, delay: index * 0.03, ease: "easeOut" }}
       layout
     >
-      {/* Card border — vector flat style */}
-      <div
-        className="relative overflow-hidden border border-border bg-paper-alt"
-        onClick={onClick}
-      >
-        {/* Image */}
-        <Image
-          src={photo.thumbnail_url}
-          alt={photo.title || "Photograph"}
-          width={photo.width}
-          height={photo.height}
-          className="w-full h-auto object-cover transition-transform duration-400
-                     group-hover:scale-[1.02]"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1400px) 33vw, 25vw"
-        />
+      <div className="polaroid-card" onClick={onClick}>
+        {/* Tape Accent strip on top of every 3rd card for scrapbooking touch */}
+        {index % 3 === 0 && <div className="tape-accent" />}
 
-        {/* Hover overlay — editorial dark wash */}
-        <div
-          className="absolute inset-0 bg-ink/70
-                      opacity-0 group-hover:opacity-100 transition-opacity duration-250
-                      flex flex-col justify-end p-3.5"
-        >
-          {/* Title */}
-          <h3 className="text-paper font-serif text-base font-semibold leading-tight mb-1.5">
-            {photo.title}
-          </h3>
+        {/* Photo Container */}
+        <div className="polaroid-image-container">
+          <Image
+            src={photo.thumbnail_url}
+            alt={photo.title || "Photograph"}
+            width={photo.width}
+            height={photo.height}
+            className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1400px) 33vw, 25vw"
+          />
+        </div>
 
-          {/* Meta row */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              {/* Film simulation badge — flat chip */}
-              {photo.film_simulation && filmColor && (
-                <span
-                  className="film-badge"
-                  style={{ backgroundColor: filmColor }}
-                >
-                  {photo.film_simulation}
-                </span>
-              )}
-            </div>
+        {/* Polaroid Caption & EXIF Typewriter Footer */}
+        <div className="polaroid-caption-area">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="polaroid-title line-clamp-1" title={photo.title}>
+              {photo.title || "Untitled Frame"}
+            </h3>
 
-            {/* Quick actions: Share link & Download */}
-            <div className="flex items-center gap-1">
+            {/* Actions: Copy Link & Download */}
+            <div className="flex items-center gap-1 shrink-0">
               <button
                 onClick={handleCopyDirectLink}
-                className="p-1.5 bg-paper/20 hover:bg-amber transition-colors duration-150
-                           border border-white/30 hover:border-amber"
-                title="Copy Direct Link for Pinterest / Sharing"
+                className="p-1.5 bg-paper-alt hover:bg-paper border border-border-dark rounded transition-colors"
+                title="Copy Direct Link"
                 aria-label={`Copy link for ${photo.title}`}
               >
-                <Share2 size={13} className="text-paper" strokeWidth={2} />
+                <Share2 size={12} className="text-ink" />
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   window.open(`/api/download/${photo.id}`, "_blank");
                 }}
-                className="p-1.5 bg-paper/20 hover:bg-amber transition-colors duration-150
-                           border border-white/30 hover:border-amber"
+                className="p-1.5 bg-paper-alt hover:bg-paper border border-border-dark rounded transition-colors"
                 title="Download Full Resolution"
                 aria-label={`Download ${photo.title}`}
               >
-                <Download size={13} className="text-paper" strokeWidth={2} />
+                <Download size={12} className="text-ink" />
               </button>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Below-card label — always visible on mobile */}
-      <div className="mt-1.5 px-0.5 md:hidden">
-        <p className="font-serif text-sm text-ink font-medium truncate">
-          {photo.title}
-        </p>
-        {photo.film_simulation && filmColor && (
-          <span
-            className="film-badge mt-1 text-[0.6rem]"
-            style={{ backgroundColor: filmColor }}
-          >
-            {photo.film_simulation}
-          </span>
-        )}
+          {/* EXIF Metadata Row */}
+          <div className="polaroid-exif-row">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {photo.camera && (
+                <span className="inline-flex items-center gap-1 text-[0.7rem] font-bold text-ink">
+                  <Camera size={12} className="text-accent shrink-0" />
+                  {photo.camera}
+                </span>
+              )}
+              {photo.film_simulation && (
+                <span className="exif-badge">
+                  🎞️ {photo.film_simulation}
+                </span>
+              )}
+            </div>
+
+            {photo.created_at && (
+              <span className="text-[0.68rem] font-bold text-ink-muted shrink-0">
+                {new Date(photo.created_at).toLocaleDateString("en-US", {
+                  month: "short",
+                  year: "2-digit",
+                })}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
     </motion.div>
   );
