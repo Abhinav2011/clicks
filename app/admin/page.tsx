@@ -179,6 +179,115 @@ function PhotoCard({ item, index, onChange, onRemove }: {
   );
 }
 
+// ─── Pinterest Pin Generator Modal ─────────────────────────────────────────────
+function PinterestPinModal({ photo, onClose }: { photo: Photo; onClose: () => void }) {
+  const defaultTitle = `${photo.title || "Fujifilm Photograph"} — ${photo.film_simulation || "Classic Chrome"} | Still Frames`;
+  const simClean = (photo.film_simulation || "classicchrome").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const locClean = (photo.location || "india").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const defaultDesc = `Quiet moment captured on ${photo.camera || "Fujifilm X-T30 II"} using ${
+    photo.film_simulation || "Classic Chrome"
+  } film simulation recipe. Location: ${
+    photo.location || "India"
+  }. Explore full resolution photograph, EXIF specs, and recipe settings on Still Frames. #fujifilm #filmphotography #${simClean} #${locClean} #streetphotography #photographyinspo #stillframes`;
+
+  const [pinTitle, setPinTitle] = useState(defaultTitle);
+  const [pinDesc, setPinDesc] = useState(defaultDesc);
+  const [copied, setCopied] = useState(false);
+
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://www.stillframes.net";
+  const targetUrl = `${baseUrl}/photo/${photo.id}`;
+  const imageUrl = photo.web_image_url || photo.thumbnail_url;
+
+  const handlePinNow = () => {
+    const fullDesc = `${pinTitle}\n\n${pinDesc}`;
+    const pUrl = `https://www.pinterest.com/pin/create/button/?url=${encodeURIComponent(
+      targetUrl
+    )}&media=${encodeURIComponent(imageUrl)}&description=${encodeURIComponent(fullDesc)}`;
+    window.open(pUrl, "_blank", "width=750,height=600");
+  };
+
+  const handleCopyCopy = async () => {
+    const copy = `Title: ${pinTitle}\n\nDescription:\n${pinDesc}\n\nLink: ${targetUrl}`;
+    await navigator.clipboard.writeText(copy);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-paper rounded-2xl p-6 max-w-lg w-full shadow-2xl border border-border flex flex-col gap-4">
+        <div className="flex items-center justify-between border-b border-border pb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-xs">
+              P
+            </div>
+            <h3 className="font-serif text-lg font-semibold text-ink">
+              Pinterest SEO Pin Generator
+            </h3>
+          </div>
+          <button onClick={onClose} className="p-1 text-ink-muted hover:text-ink">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Thumbnail preview */}
+        <div className="flex items-center gap-3 bg-paper-alt p-3 rounded-xl border border-border">
+          <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-ink">
+            <Image src={imageUrl} alt={photo.title} fill className="object-cover" />
+          </div>
+          <div className="overflow-hidden text-xs">
+            <p className="font-semibold text-ink truncate">{photo.title}</p>
+            <p className="text-ink-muted">{photo.camera || "Fujifilm"} · {photo.film_simulation || "Classic Chrome"}</p>
+            <p className="text-accent text-[0.7rem] font-mono mt-0.5 truncate">{targetUrl}</p>
+          </div>
+        </div>
+
+        {/* SEO Title Input */}
+        <div>
+          <label className="block text-xs font-semibold text-ink mb-1">
+            📌 Pinterest Pin Title (SEO Keywords)
+          </label>
+          <input
+            type="text"
+            value={pinTitle}
+            onChange={(e) => setPinTitle(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-border text-xs text-ink bg-paper font-sans"
+          />
+        </div>
+
+        {/* SEO Description Input */}
+        <div>
+          <label className="block text-xs font-semibold text-ink mb-1">
+            📝 Pinterest SEO Description & Hashtags
+          </label>
+          <textarea
+            rows={4}
+            value={pinDesc}
+            onChange={(e) => setPinDesc(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-border text-xs text-ink bg-paper font-sans leading-relaxed"
+          />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 pt-2 border-t border-border">
+          <button
+            onClick={handleCopyCopy}
+            className="flex-1 py-2.5 px-4 rounded-xl border border-border bg-paper-alt text-ink font-sans text-xs font-semibold hover:bg-paper transition-colors"
+          >
+            {copied ? "Copied to Clipboard!" : "Copy SEO Text"}
+          </button>
+          <button
+            onClick={handlePinNow}
+            className="flex-1 py-2.5 px-4 rounded-xl bg-red-600 text-white font-sans text-xs font-semibold hover:bg-red-700 transition-colors shadow-md flex items-center justify-center gap-1.5"
+          >
+            📌 Pin Now on Pinterest
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Manage & Delete Panel ─────────────────────────────────────────────────────
 function ManagePanel({ passkey }: { passkey: string }) {
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -254,6 +363,8 @@ function ManagePanel({ passkey }: { passkey: string }) {
     }
   };
 
+  const [pinModalPhoto, setPinModalPhoto] = useState<Photo | null>(null);
+
   if (loading) return (
     <div className="flex items-center justify-center py-20 gap-3 text-ink-muted">
       <Loader2 size={22} className="animate-spin" />
@@ -320,27 +431,45 @@ function ManagePanel({ passkey }: { passkey: string }) {
             const isSelected = selected.has(photo.id);
             return (
               <div key={photo.id}
-                onClick={() => toggleSelect(photo.id)}
-                className={`relative rounded-xl overflow-hidden cursor-pointer group border-2 transition-all duration-200
+                className={`relative rounded-xl overflow-hidden group border-2 transition-all duration-200
                   ${isSelected ? "border-red-400 scale-[0.97]" : "border-transparent hover:border-border"}`}
               >
                 {/* Checkbox overlay */}
-                <div className={`absolute top-2 left-2 z-10 w-5 h-5 rounded border-2 flex items-center justify-center transition-all
-                  ${isSelected ? "bg-red-500 border-red-500" : "bg-white/80 border-white/60 group-hover:border-white"}`}>
+                <button
+                  type="button"
+                  onClick={() => toggleSelect(photo.id)}
+                  className={`absolute top-2 left-2 z-10 w-5 h-5 rounded border-2 flex items-center justify-center transition-all
+                  ${isSelected ? "bg-red-500 border-red-500" : "bg-white/80 border-white/60 group-hover:border-white"}`}
+                >
                   {isSelected && <CheckCircle2 size={13} className="text-white" />}
-                </div>
+                </button>
+
+                {/* Pin to Pinterest Action Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPinModalPhoto(photo);
+                  }}
+                  className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-red-600 text-white shadow-md hover:bg-red-700 transition-colors"
+                  title="Pin to Pinterest SEO Generator"
+                >
+                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 0C5.373 0 0 5.372 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12 0-6.628-5.373-12-12-12z" />
+                  </svg>
+                </button>
 
                 {/* Thumbnail */}
-                <div className="relative aspect-square bg-paper-dark">
+                <div className="relative aspect-square bg-paper-dark" onClick={() => toggleSelect(photo.id)}>
                   <Image src={photo.thumbnail_url || photo.web_image_url} alt={photo.title} fill
                     className="object-cover" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" />
                 </div>
 
                 {/* Info overlay */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
                   <p className="text-white text-xs font-medium truncate">{photo.title}</p>
                   {photo.film_simulation && (
-                    <p className="text-white/60 text-[10px] truncate">{photo.film_simulation}</p>
+                    <p className="text-white/70 text-[10px] truncate">{photo.film_simulation}</p>
                   )}
                 </div>
 
@@ -352,6 +481,11 @@ function ManagePanel({ passkey }: { passkey: string }) {
             );
           })}
         </div>
+      )}
+
+      {/* Pinterest Pin Generator Modal */}
+      {pinModalPhoto && (
+        <PinterestPinModal photo={pinModalPhoto} onClose={() => setPinModalPhoto(null)} />
       )}
 
       {/* Confirm Delete Dialog */}

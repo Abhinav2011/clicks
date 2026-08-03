@@ -85,7 +85,7 @@ export default function PhotoModal({
   )}&media=${encodeURIComponent(
     photo.web_image_url
   )}&description=${encodeURIComponent(
-    `${photo.title || "Fujifilm Photograph"} — Shot on ${photo.camera || "Fujifilm"}`
+    `${photo.title || "Fujifilm Photograph"} — Shot on ${photo.camera || "Fujifilm"} with ${photo.film_simulation || "film simulation"}. Explore EXIF specs & recipe on Still Frames. #fujifilm #filmphotography #photographyinspo #stillframes`
   )}`;
 
   // ── EXIF items ──

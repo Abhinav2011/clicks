@@ -19,24 +19,35 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: "Photo Not Found — Still Frames" };
   }
 
-  const title = `${photo.title || "Photograph"} — Still Frames Fujifilm Gallery`;
+  const title = `${photo.title || "Fujifilm Photograph"} — Still Frames Gallery`;
   const description =
     photo.description ||
-    `Shot on ${photo.camera || "Fujifilm"} with ${photo.film_simulation || "film simulation"}. Download full resolution on Still Frames.`;
+    `Shot on ${photo.camera || "Fujifilm X-T30 II"} using ${
+      photo.film_simulation || "Classic Chrome"
+    }. Explore full resolution details, EXIF data, and custom film simulation recipes on Still Frames.`;
+  const imageUrl = photo.web_image_url || photo.thumbnail_url;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.stillframes.net";
+  const canonicalUrl = `${siteUrl}/photo/${photo.id}`;
 
   return {
     title,
     description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title,
       description,
+      url: canonicalUrl,
+      siteName: "Still Frames",
       type: "article",
+      authors: ["Abhinav Kumar"],
       images: [
         {
-          url: photo.thumbnail_url || photo.web_image_url,
+          url: imageUrl,
           width: photo.width,
           height: photo.height,
-          alt: photo.title || "Fujifilm Photograph",
+          alt: photo.title || "Fujifilm Photograph by Abhinav Kumar",
         },
       ],
     },
@@ -44,7 +55,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: "summary_large_image",
       title,
       description,
-      images: [photo.thumbnail_url || photo.web_image_url],
+      images: [imageUrl],
+    },
+    other: {
+      "pinterest-rich-pin": "true",
+      "p:domain_verify": process.env.NEXT_PUBLIC_PINTEREST_VERIFY || "",
     },
   };
 }
