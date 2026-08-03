@@ -114,10 +114,16 @@ body {
 }
 
 .nav-links {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+  }
 }
 
 .nav-link-btn {
@@ -581,6 +587,18 @@ body {
   border-color: var(--color-accent) !important;
   box-shadow: 0 0 0 3px rgba(194, 65, 12, 0.12) !important;
   outline: none;
+}
+
+/* Utility to hide scrollbars on swipe containers */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 @media (max-width: 640px) {

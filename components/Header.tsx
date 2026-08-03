@@ -11,24 +11,22 @@ export default function Header() {
   const pathname = usePathname();
 
   const links = [
-    { href: "/", label: "01. ARCHIVE" },
-    { href: "/contact", label: "02. SAY HELLO" },
+    { href: "/", label: "Archive" },
+    { href: "/contact", label: "Contact" },
   ];
 
   return (
     <header className="site-header">
-      <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+      <div className="mx-auto max-w-7xl px-4 sm:px-8 lg:px-10">
         <div className="header-row">
           <Link href="/" className="brand" aria-label="Still Frames Home">
             <span className="brand-mark">
-              <Camera size={20} strokeWidth={2.2} />
+              <Camera size={18} strokeWidth={2.2} />
             </span>
-            <div className="flex flex-col">
-              <span className="brand-text-title">STILL FRAMES</span>
-            </div>
-            <span className="brand-stamp hidden sm:inline-block">VOL. 2026</span>
+            <span className="brand-text-title">STILL FRAMES</span>
           </Link>
 
+          {/* Desktop Nav Links */}
           <nav className="hidden md:flex nav-links">
             {links.map((link) => (
               <Link
@@ -42,40 +40,50 @@ export default function Header() {
           </nav>
 
           <span className="header-note hidden lg:inline-block">
-            📷 FUJIFILM PHOTO DIARY
+            Fujifilm Photo Diary
           </span>
 
+          {/* Mobile Hamburger Toggle */}
           <button
-            className="md:hidden menu-button"
+            className="md:hidden menu-button p-2 text-ink hover:bg-paper-alt rounded-lg transition-colors ml-auto"
             onClick={() => setOpen(!open)}
             aria-label="Toggle menu"
           >
-            {open ? <X size={20} /> : <Menu size={20} />}
+            {open ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </div>
 
+      {/* Mobile Drawer */}
       <AnimatePresence>
         {open && (
           <motion.nav
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mobile-nav"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mobile-nav border-t border-border bg-paper-card"
           >
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
+            <div className="flex flex-col py-2 px-4 gap-1">
+              {links.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setOpen(false)}
+                  className={`py-3 px-3 rounded-lg text-base font-semibold transition-colors ${
+                    pathname === link.href
+                      ? "bg-ink text-white font-bold"
+                      : "text-ink hover:bg-paper-alt"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
           </motion.nav>
         )}
       </AnimatePresence>
     </header>
   );
 }
+
 

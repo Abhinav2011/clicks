@@ -9,12 +9,12 @@ const SAMPLE_PHOTOS: Photo[] = [];
 const PAGE_SIZE = 24;
 
 /** Helper to return empty paginated response */
-function emptyPaginated(page = 1): PaginatedPhotos {
+function emptyPaginated(page = 1, pageSize = 12): PaginatedPhotos {
   return {
     photos: [],
     total: 0,
     page,
-    pageSize: PAGE_SIZE,
+    pageSize,
     hasMore: false,
   };
 }
@@ -22,14 +22,15 @@ function emptyPaginated(page = 1): PaginatedPhotos {
 /** Fetch paginated, published photos from Supabase. */
 export async function getPhotos(
   page = 1,
-  tag?: string
+  tag?: string,
+  pageSize = 12
 ): Promise<PaginatedPhotos> {
   if (!isSupabaseConfigured()) {
-    return emptyPaginated(page);
+    return emptyPaginated(page, pageSize);
   }
 
-  const from = (page - 1) * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
 
   let query = getSupabase()
     .from("photos")
@@ -46,7 +47,7 @@ export async function getPhotos(
 
   if (error || !data) {
     if (error) console.error("Supabase photos fetch error:", error);
-    return emptyPaginated(page);
+    return emptyPaginated(page, pageSize);
   }
 
   const total = count ?? data.length;
@@ -54,8 +55,8 @@ export async function getPhotos(
     photos: data as Photo[],
     total,
     page,
-    pageSize: PAGE_SIZE,
-    hasMore: from + PAGE_SIZE < total,
+    pageSize,
+    hasMore: from + pageSize < total,
   };
 }
 

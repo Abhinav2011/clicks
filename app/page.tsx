@@ -18,22 +18,22 @@ function GalleryHeader({
   totalCount: number;
 }) {
   return (
-    <div className="pt-8 pb-6 border-b border-border mb-8">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+    <div className="pt-6 sm:pt-8 pb-5 sm:pb-6 border-b border-border mb-6 sm:mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 sm:gap-6">
         <div>
-          <h1 className="font-serif text-3xl sm:text-4xl font-medium text-ink tracking-tight">
+          <h1 className="font-serif text-2xl sm:text-4xl font-medium text-ink tracking-tight">
             Selected Photographs
           </h1>
-          <p className="text-sm text-ink-muted mt-1.5 max-w-xl leading-relaxed">
-            A ongoing collection of walks, travels, and quiet moments shot on Fujifilm cameras.
+          <p className="text-xs sm:text-sm text-ink-muted mt-1 sm:mt-1.5 max-w-xl leading-relaxed">
+            An ongoing collection of walks, travels, and quiet moments shot on Fujifilm cameras.
           </p>
         </div>
 
         {tags.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 shrink-0" aria-label="Filter photographs">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar flex-nowrap sm:flex-wrap pb-1 max-w-full shrink-0" aria-label="Filter photographs">
             <button
               onClick={() => onTagChange(null)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                 activeTag === null
                   ? "bg-ink text-white shadow-sm"
                   : "bg-paper-card text-ink-muted border border-border hover:border-ink hover:text-ink"
@@ -45,7 +45,7 @@ function GalleryHeader({
               <button
                 key={tag}
                 onClick={() => onTagChange(tag)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold capitalize transition-all ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap capitalize transition-all ${
                   activeTag === tag
                     ? "bg-ink text-white shadow-sm"
                     : "bg-paper-card text-ink-muted border border-border hover:border-ink hover:text-ink"
@@ -64,16 +64,32 @@ function GalleryHeader({
 export default function Home() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>([]);
+  const [pageSize, setPageSize] = useState(12);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window !== "undefined") {
+        setPageSize(window.innerWidth < 640 ? 8 : 12);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const fetchPhotos = useCallback(
-    async (pageNum: number, tag: string | null, append = false) => {
+    async (pageNum: number, tag: string | null, append = false, size = pageSize) => {
       setLoading(true);
       try {
-        const params = new URLSearchParams({ page: String(pageNum) });
+        const params = new URLSearchParams({
+          page: String(pageNum),
+          pageSize: String(size),
+        });
         if (tag) params.set("tag", tag);
         const response = await fetch(`/api/photos?${params}`);
         const data = await response.json();
@@ -81,6 +97,7 @@ export default function Home() {
           append ? [...previous, ...data.photos] : data.photos
         );
         setHasMore(data.hasMore);
+        setTotal(data.total || 0);
         setPage(pageNum);
       } catch (error) {
         console.error("Failed to fetch photos:", error);
@@ -88,22 +105,29 @@ export default function Home() {
         setLoading(false);
       }
     },
-    []
+    [pageSize]
   );
 
   useEffect(() => {
     void Promise.resolve().then(async () => {
-      await fetchPhotos(1, null);
+      await fetchPhotos(1, null, false, pageSize);
       fetch("/api/tags")
         .then((response) => response.json())
         .then((data) => setTags(data.tags || []))
         .catch(() => {});
     });
-  }, [fetchPhotos]);
+  }, [fetchPhotos, pageSize]);
 
   const handleTagChange = (tag: string | null) => {
     setActiveTag(tag);
-    fetchPhotos(1, tag);
+    fetchPhotos(1, tag, false, pageSize);
+  };
+
+  const handleMobilePageChange = (newPage: number) => {
+    fetchPhotos(newPage, activeTag, false, pageSize);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   return (
@@ -115,7 +139,7 @@ export default function Home() {
             activeTag={activeTag}
             tags={tags}
             onTagChange={handleTagChange}
-            totalCount={photos.length}
+            totalCount={total || photos.length}
           />
 
           {loading && photos.length === 0 ? (
@@ -135,8 +159,12 @@ export default function Home() {
             <MasonryGrid
               photos={photos}
               hasMore={hasMore}
-              onLoadMore={() => fetchPhotos(page + 1, activeTag, true)}
+              onLoadMore={() => fetchPhotos(page + 1, activeTag, true, pageSize)}
               loading={loading}
+              currentPage={page}
+              totalPhotos={total || photos.length}
+              pageSize={pageSize}
+              onPageChange={handleMobilePageChange}
             />
           )}
         </section>
