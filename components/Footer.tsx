@@ -19,17 +19,13 @@ export default function Footer() {
 
         <div className="footer-bottom">
           <div className="flex items-center gap-2">
-            <Camera size={16} className="text-terracotta" />
+            <Camera size={16} className="text-accent" />
             <span className="font-serif font-bold text-ink">STILL FRAMES</span>
-            <span className="text-[0.62rem] text-ink-muted">· Fujifilm Photo Diary</span>
+            <span className="text-xs text-ink-muted">· Fujifilm Photo Diary</span>
           </div>
 
-          <div className="flex items-center gap-1 text-ink-muted">
-            Handcrafted with <Heart size={12} className="text-terracotta inline mx-0.5" /> in 2026
-          </div>
-
-          <div className="text-ink-muted">
-            EST. 2024 · ALL RIGHTS RESERVED
+          <div className="flex items-center gap-1 text-xs text-ink-muted">
+            Photographs & still frames by Abhinav Kumar
           </div>
         </div>
       </div>
