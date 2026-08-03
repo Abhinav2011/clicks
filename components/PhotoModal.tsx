@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Photo } from "@/lib/types";
-import { FILM_SIM_COLORS } from "@/lib/types";
 
 interface PhotoModalProps {
   photo: Photo;
@@ -66,13 +65,10 @@ export default function PhotoModal({
     };
   }, [handleKeyDown]);
 
-  const filmColor = photo.film_simulation
-    ? FILM_SIM_COLORS[photo.film_simulation]
-    : null;
-
-  const photoShareUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/photo/${photo.id}`
-    : `/photo/${photo.id}`;
+  const photoShareUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/photo/${photo.id}`
+      : `/photo/${photo.id}`;
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -99,7 +95,7 @@ export default function PhotoModal({
     { icon: Aperture, label: "Aperture", value: photo.aperture },
     { icon: Timer, label: "Shutter", value: photo.shutter_speed },
     { icon: Gauge, label: "ISO", value: photo.iso?.toString() },
-    { icon: Focus, label: "Focal Length", value: photo.focal_length },
+    { icon: Focus, label: "Focal", value: photo.focal_length },
     { icon: MapPin, label: "Location", value: photo.location },
   ].filter((item) => item.value);
 
@@ -107,7 +103,7 @@ export default function PhotoModal({
     <AnimatePresence>
       <motion.div
         ref={overlayRef}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -115,13 +111,13 @@ export default function PhotoModal({
         onClick={(e) => e.target === overlayRef.current && onClose()}
       >
         {/* Backdrop */}
-        <div className="absolute inset-0 bg-ink/85" />
+        <div className="absolute inset-0 bg-[#14100d]/88 backdrop-blur-sm" />
 
         {/* Modal container */}
         <motion.div
-          className="relative z-10 flex flex-col lg:flex-row w-full max-w-6xl max-h-[90vh]
-                     bg-paper border border-border rounded-2xl overflow-hidden
-                     shadow-[0_18px_48px_rgba(78,65,55,0.18)]"
+          className="relative z-10 flex flex-col lg:flex-row w-full max-w-6xl max-h-[92vh]
+                     bg-paper-card border-2 border-ink rounded-lg overflow-hidden
+                     shadow-[8px_12px_32px_rgba(43,36,31,0.45)]"
           initial={{ scale: 0.97, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.97, opacity: 0 }}
@@ -129,8 +125,8 @@ export default function PhotoModal({
         >
           {/* ─── Left: Image ─── */}
           <div
-            className="relative flex-1 min-h-[300px] lg:min-h-0 bg-ink flex items-center
-                       justify-center overflow-hidden"
+            className="relative flex-1 min-h-[300px] lg:min-h-0 bg-[#1b1714] flex items-center
+                       justify-center overflow-hidden p-3"
           >
             <Image
               src={photo.web_image_url}
@@ -148,8 +144,8 @@ export default function PhotoModal({
             {/* Zoom toggle */}
             <button
               onClick={() => setZoomed(!zoomed)}
-              className="absolute bottom-3 right-3 p-1.5 border border-white/30
-                         bg-white/10 hover:bg-amber hover:border-amber transition-colors"
+              className="absolute bottom-3 right-3 p-2 border border-white/40
+                         bg-black/40 hover:bg-terracotta hover:border-terracotta transition-colors rounded-sm"
               aria-label={zoomed ? "Zoom out" : "Zoom in"}
             >
               {zoomed ? (
@@ -163,9 +159,9 @@ export default function PhotoModal({
             {onPrev && (
               <button
                 onClick={onPrev}
-                className="absolute left-3 top-1/2 -translate-y-1/2 p-2
-                           bg-white/10 hover:bg-amber border border-white/20 hover:border-amber
-                           transition-colors"
+                className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5
+                           bg-black/50 hover:bg-terracotta border border-white/20 hover:border-terracotta
+                           transition-colors rounded-sm"
                 aria-label="Previous photo"
               >
                 <ChevronLeft size={20} className="text-white" />
@@ -174,9 +170,9 @@ export default function PhotoModal({
             {onNext && (
               <button
                 onClick={onNext}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-2
-                           bg-white/10 hover:bg-amber border border-white/20 hover:border-amber
-                           transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5
+                           bg-black/50 hover:bg-terracotta border border-white/20 hover:border-terracotta
+                           transition-colors rounded-sm"
                 aria-label="Next photo"
               >
                 <ChevronRight size={20} className="text-white" />
@@ -184,44 +180,43 @@ export default function PhotoModal({
             )}
           </div>
 
-          {/* ─── Right: Info Panel ─── */}
-          <div className="w-full lg:w-[340px] flex flex-col overflow-y-auto">
+          {/* ─── Right: Logbook Info Panel ─── */}
+          <div className="w-full lg:w-[350px] flex flex-col overflow-y-auto bg-paper-card border-t lg:border-t-0 lg:border-l-2 border-dashed border-border-dark">
             {/* Close */}
-            <div className="flex justify-end p-3 border-b border-border-subtle">
+            <div className="flex items-center justify-between p-4 border-b border-dashed border-border-dark bg-paper-alt">
+              <span className="font-mono text-[0.68rem] font-bold text-terracotta tracking-wider uppercase">
+                📜 LOGBOOK SHEET #{photo.id ? String(photo.id).slice(-4) : "001"}
+              </span>
               <button
                 onClick={onClose}
-                className="p-1.5 border border-border hover:border-ink hover:bg-paper-alt transition-colors"
+                className="p-1 border border-border-dark hover:border-ink hover:bg-paper transition-colors rounded-sm"
                 aria-label="Close"
               >
-                <X size={16} className="text-ink-muted" />
+                <X size={16} className="text-ink" />
               </button>
             </div>
 
-            <div className="px-5 pb-6 flex flex-col gap-5">
+            <div className="p-5 flex flex-col gap-5">
               {/* Title & description */}
               <div>
-                <h2 className="font-serif text-2xl font-semibold text-ink leading-tight">
-                  {photo.title}
+                <h2 className="font-serif text-2xl font-bold text-ink leading-tight">
+                  {photo.title || "Untitled Photograph"}
                 </h2>
                 {photo.description && (
-                  <p className="mt-2 text-sm text-ink-muted leading-relaxed">
+                  <p className="mt-2.5 font-sans text-sm text-ink-muted leading-relaxed border-l-2 border-terracotta pl-3">
                     {photo.description}
                   </p>
                 )}
               </div>
 
               {/* Film simulation badge */}
-              {photo.film_simulation && filmColor && (
-                <div>
-                  <p className="text-[0.65rem] uppercase tracking-widest text-ink-muted mb-1.5 font-medium">
-                    Film Simulation
+              {photo.film_simulation && (
+                <div className="bg-paper-alt border border-border-dark p-3 rounded-sm">
+                  <p className="font-mono text-[0.63rem] uppercase font-bold text-ink-muted mb-1">
+                    FILM SIMULATION STOCK
                   </p>
-                  <span
-                    className="film-badge text-xs"
-                    style={{ backgroundColor: filmColor }}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-white/80" />
-                    {photo.film_simulation}
+                  <span className="font-mono text-sm font-bold text-terracotta inline-flex items-center gap-1.5">
+                    🎞️ {photo.film_simulation}
                   </span>
                 </div>
               )}
@@ -229,28 +224,21 @@ export default function PhotoModal({
               {/* EXIF data */}
               {exifItems.length > 0 && (
                 <div>
-                  <p className="text-[0.65rem] uppercase tracking-widest text-ink-muted mb-2 font-medium">
-                    Camera Settings
+                  <p className="font-mono text-[0.65rem] uppercase font-bold text-ink-muted mb-2 tracking-wider">
+                    TECHNICAL SPECIFICATIONS
                   </p>
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-2 gap-2 font-mono">
                     {exifItems.map((item) => (
                       <div
                         key={item.label}
-                        className="flex items-center gap-2 text-sm"
+                        className="p-2 bg-paper-alt border border-border rounded-sm flex flex-col"
                       >
-                        <item.icon
-                          size={14}
-                          className="text-sage flex-shrink-0"
-                          strokeWidth={1.5}
-                        />
-                        <div className="min-w-0">
-                          <p className="text-[0.6rem] text-ink-muted uppercase tracking-wider">
-                            {item.label}
-                          </p>
-                          <p className="text-ink font-medium truncate text-xs">
-                            {item.value}
-                          </p>
-                        </div>
+                        <span className="text-[0.6rem] text-ink-light uppercase">
+                          {item.label}
+                        </span>
+                        <span className="text-xs font-bold text-ink truncate mt-0.5">
+                          {item.value}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -259,31 +247,31 @@ export default function PhotoModal({
 
               {/* Tags */}
               {photo.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5 font-mono">
                   {photo.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="px-2 py-0.5 border border-border bg-paper-alt text-ink-muted
-                                 text-[0.62rem] font-medium capitalize uppercase tracking-[0.06em] font-sans"
+                      className="px-2 py-1 border border-border-dark bg-paper-alt text-ink-muted
+                                 text-[0.65rem] font-bold uppercase rounded-sm"
                     >
-                      {tag}
+                      #{tag}
                     </span>
                   ))}
                 </div>
               )}
 
               {/* Actions */}
-              <div className="flex flex-col gap-2 mt-auto pt-2">
+              <div className="flex flex-col gap-2 mt-auto pt-4 border-t border-dashed border-border-dark">
                 <a
                   href={`/api/download/${photo.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full px-4 py-2.5
-                             border-2 border-ink bg-ink text-paper text-xs font-semibold uppercase tracking-[0.08em] font-sans
-                             hover:bg-paper hover:text-ink transition-all duration-150"
+                             border-2 border-ink bg-ink text-paper-card text-xs font-mono font-bold uppercase tracking-wider
+                             hover:bg-terracotta hover:border-ink shadow-[2px_3px_0px_var(--color-terracotta)] transition-all duration-150"
                 >
                   <Download size={14} strokeWidth={2} />
-                  Download Full Res
+                  Download Original Print
                 </a>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -292,8 +280,8 @@ export default function PhotoModal({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-1.5 px-3 py-2
-                               border-2 border-red-600 bg-red-600 text-white text-xs font-semibold uppercase tracking-[0.06em] font-sans
-                               hover:bg-red-700 transition-colors duration-150"
+                               border-2 border-red-800 bg-red-700 text-white text-xs font-mono font-bold uppercase
+                               hover:bg-red-800 transition-colors duration-150 rounded-sm"
                   >
                     <ExternalLink size={13} />
                     Pin it
@@ -302,18 +290,18 @@ export default function PhotoModal({
                   <button
                     onClick={handleShare}
                     className="flex items-center justify-center gap-1.5 px-3 py-2
-                               border-2 border-border text-ink-muted text-xs font-semibold uppercase tracking-[0.06em] font-sans
-                               hover:border-amber hover:text-amber-dark transition-all duration-150"
+                               border-2 border-border-dark bg-paper-alt text-ink text-xs font-mono font-bold uppercase
+                               hover:bg-paper hover:border-ink transition-all duration-150 rounded-sm"
                   >
                     <Share2 size={13} strokeWidth={2} />
-                    {copied ? "Copied!" : "Link"}
+                    {copied ? "Copied!" : "Share Link"}
                   </button>
                 </div>
               </div>
 
               {/* Download count */}
-              <p className="text-[0.6rem] text-ink-muted text-center">
-                {photo.download_count} downloads
+              <p className="font-mono text-[0.62rem] text-ink-muted text-center">
+                📊 {photo.download_count} total print downloads
               </p>
             </div>
           </div>
@@ -322,3 +310,4 @@ export default function PhotoModal({
     </AnimatePresence>
   );
 }
+
