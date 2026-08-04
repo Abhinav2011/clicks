@@ -69,11 +69,7 @@ export default function Header() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className={`py-3 px-3 rounded-lg text-base font-semibold transition-colors ${
-                    pathname === link.href
-                      ? "bg-ink text-white font-bold"
-                      : "text-ink hover:bg-paper-alt"
-                  }`}
+                  className={`mobile-nav-link ${pathname === link.href ? "mobile-nav-link--active" : ""}`}
                 >
                   {link.label}
                 </Link>
@@ -85,5 +81,4 @@ export default function Header() {
     </header>
   );
 }
-
 
