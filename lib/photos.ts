@@ -7,6 +7,7 @@ import type { Photo, PaginatedPhotos } from "./types";
 const SAMPLE_PHOTOS: Photo[] = [];
 
 const PAGE_SIZE = 24;
+const SITEMAP_BATCH_SIZE = 1_000;
 
 /** Helper to return empty paginated response */
 function emptyPaginated(page = 1, pageSize = 12): PaginatedPhotos {
@@ -76,6 +77,32 @@ export async function getPhotoById(id: string): Promise<Photo | null> {
     return null;
   }
   return data as Photo;
+}
+
+/** Fetch every published photo for the sitemap. This is deliberately paginated
+ * because Supabase caps a single query response. */
+export async function getAllPublishedPhotosForSitemap(): Promise<Photo[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  const photos: Photo[] = [];
+  for (let from = 0; ; from += SITEMAP_BATCH_SIZE) {
+    const { data, error } = await getSupabase()
+      .from("photos")
+      .select("id, web_image_url, thumbnail_url, created_at")
+      .eq("published", true)
+      .order("created_at", { ascending: false })
+      .range(from, from + SITEMAP_BATCH_SIZE - 1);
+
+    if (error) {
+      console.error("Supabase sitemap fetch error:", error);
+      break;
+    }
+
+    const batch = (data || []) as Photo[];
+    photos.push(...batch);
+    if (batch.length < SITEMAP_BATCH_SIZE) break;
+  }
+  return photos;
 }
 
 /** Extract unique tags from all published photos in Supabase. */

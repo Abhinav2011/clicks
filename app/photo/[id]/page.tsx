@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -73,11 +71,15 @@ export default async function PhotoPage({ params }: PageProps) {
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.stillframes.net";
+  const copyrightYear = photo.created_at
+    ? new Date(photo.created_at).getFullYear()
+    : undefined;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ImageObject",
     contentUrl: photo.web_image_url || photo.thumbnail_url,
     url: `${baseUrl}/photo/${photo.id}`,
+    mainEntityOfPage: `${baseUrl}/photo/${photo.id}`,
     name: photo.title || "Fujifilm Photograph",
     description:
       photo.description ||
@@ -90,6 +92,9 @@ export default async function PhotoPage({ params }: PageProps) {
       "@type": "Person",
       name: "Abhinav Kumar",
     },
+    creditText: "Abhinav Kumar / Still Frames",
+    copyrightNotice: `© ${copyrightYear || "Current"} Abhinav Kumar`,
+    thumbnailUrl: photo.thumbnail_url,
     exifData: [
       { "@type": "PropertyValue", name: "Camera", value: photo.camera },
       { "@type": "PropertyValue", name: "Film Simulation", value: photo.film_simulation },
