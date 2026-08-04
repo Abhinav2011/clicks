@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Download, Share2, Camera } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Photo } from "@/lib/types";
@@ -12,6 +13,11 @@ interface PhotoCardProps {
 }
 
 export default function PhotoCard({ photo, index, onClick }: PhotoCardProps) {
+  const imageAlt = [
+    photo.title || "Fujifilm photograph",
+    photo.location && `photographed in ${photo.location}`,
+    photo.film_simulation && `using Fujifilm ${photo.film_simulation}`,
+  ].filter(Boolean).join(", ");
   const handleCopyDirectLink = async (e: React.MouseEvent) => {
     e.stopPropagation();
     const url = `${window.location.origin}/photo/${photo.id}`;
@@ -40,16 +46,25 @@ export default function PhotoCard({ photo, index, onClick }: PhotoCardProps) {
         {index % 3 === 0 && <div className="tape-accent" />}
 
         {/* Photo Container */}
-        <div className="polaroid-image-container">
+        <Link
+          href={`/photo/${photo.id}`}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onClick();
+          }}
+          className="polaroid-image-container block"
+          aria-label={`View ${photo.title || "photograph"}`}
+        >
           <Image
             src={photo.thumbnail_url}
-            alt={photo.title || "Photograph"}
+            alt={imageAlt}
             width={photo.width}
             height={photo.height}
             className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-[1.02]"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1400px) 33vw, 25vw"
           />
-        </div>
+        </Link>
 
         {/* Polaroid Caption & EXIF Typewriter Footer */}
         <div className="polaroid-caption-area">

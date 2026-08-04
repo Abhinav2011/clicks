@@ -1,5 +1,5 @@
 import { MetadataRoute } from "next";
-import { getPhotos } from "@/lib/photos";
+import { getAllPublishedPhotosForSitemap } from "@/lib/photos";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.stillframes.net";
@@ -22,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Dynamic photo pages from Supabase
   try {
-    const { photos } = await getPhotos(1);
+    const photos = await getAllPublishedPhotosForSitemap();
     const photoRoutes: MetadataRoute.Sitemap = photos.map((photo) => ({
       url: `${baseUrl}/photo/${photo.id}`,
       lastModified: new Date(photo.created_at || Date.now()),
