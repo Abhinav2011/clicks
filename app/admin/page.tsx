@@ -21,6 +21,7 @@ import {
   Trash2,
   RefreshCw,
   LayoutGrid,
+  Download,
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -180,6 +181,39 @@ function PhotoCard({ item, index, onChange, onRemove }: {
 }
 
 // ─── Pinterest Pin Generator Modal ─────────────────────────────────────────────
+function loadCanvasImage(source: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new window.Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Could not load the photo for the Pin image."));
+    image.src = source;
+  });
+}
+
+function drawCover(context: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, width: number, height: number) {
+  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+  const sourceWidth = width / scale;
+  const sourceHeight = height / scale;
+  context.drawImage(image, (image.naturalWidth - sourceWidth) / 2, (image.naturalHeight - sourceHeight) / 2, sourceWidth, sourceHeight, x, y, width, height);
+}
+
+function drawWrappedText(context: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) {
+  const words = text.trim().split(/\s+/);
+  let line = "";
+  let currentY = y;
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word;
+    if (context.measureText(next).width > maxWidth && line) {
+      context.fillText(line, x, currentY);
+      line = word;
+      currentY += lineHeight;
+    } else line = next;
+  }
+  if (line) context.fillText(line, x, currentY);
+  return currentY;
+}
+
 function PinterestPinModal({ photo, onClose }: { photo: Photo; onClose: () => void }) {
   const defaultTitle = `${photo.title || "Fujifilm Photograph"} — ${photo.film_simulation || "Classic Chrome"} | Still Frames`;
   const simClean = (photo.film_simulation || "classicchrome").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -193,18 +227,78 @@ function PinterestPinModal({ photo, onClose }: { photo: Photo; onClose: () => vo
   const [pinTitle, setPinTitle] = useState(defaultTitle);
   const [pinDesc, setPinDesc] = useState(defaultDesc);
   const [copied, setCopied] = useState(false);
+  const [pinPreview, setPinPreview] = useState<string | null>(null);
+  const [generatingPin, setGeneratingPin] = useState(false);
+  const [pinError, setPinError] = useState("");
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://www.stillframes.net";
   const targetUrl = `${baseUrl}/photo/${photo.id}`;
   const imageUrl = photo.web_image_url || photo.thumbnail_url;
 
-  const handlePinNow = () => {
-    const fullDesc = `${pinTitle}\n\n${pinDesc}`;
-    const pUrl = `https://www.pinterest.com/pin/create/button/?url=${encodeURIComponent(
-      targetUrl
-    )}&media=${encodeURIComponent(imageUrl)}&description=${encodeURIComponent(fullDesc)}`;
-    window.open(pUrl, "_blank", "width=750,height=600");
+  const generatePin = async () => {
+    setGeneratingPin(true);
+    setPinError("");
+    try {
+      const image = await loadCanvasImage(imageUrl);
+      const canvas = document.createElement("canvas");
+      canvas.width = 1000;
+      canvas.height = 1500;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Your browser cannot create a Pin image.");
+
+      context.fillStyle = "#fbf8f3";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = "#b96d52";
+      context.fillRect(0, 0, canvas.width, 24);
+      context.fillStyle = "#4e4137";
+      context.font = "600 22px ui-rounded, Avenir, sans-serif";
+      context.letterSpacing = "2px";
+      context.fillText("STILL FRAMES", 74, 82);
+      context.fillStyle = "#8a7c70";
+      context.font = "500 18px ui-rounded, Avenir, sans-serif";
+      context.fillText("FUJIFILM PHOTO DIARY", 74, 116);
+
+      context.save();
+      context.beginPath();
+      context.roundRect(64, 152, 872, 930, 24);
+      context.clip();
+      drawCover(context, image, 64, 152, 872, 930);
+      context.restore();
+
+      context.fillStyle = "#4e4137";
+      context.font = "500 56px Georgia, serif";
+      const finalY = drawWrappedText(context, photo.title || "A quiet frame", 74, 1172, 830, 68);
+      context.fillStyle = "#b96d52";
+      context.font = "600 20px ui-rounded, Avenir, sans-serif";
+      const details = [photo.location, photo.film_simulation, photo.camera].filter(Boolean).join("  ·  ");
+      context.fillText(details || "A moment from the archive", 74, Math.min(finalY + 62, 1420));
+      context.fillStyle = "#e9dfd2";
+      context.fillRect(74, 1438, 852, 2);
+      context.fillStyle = "#8a7c70";
+      context.font = "500 16px ui-rounded, Avenir, sans-serif";
+      context.fillText("stillframes.net", 74, 1474);
+
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("Could not export the Pin image.");
+      if (pinPreview) URL.revokeObjectURL(pinPreview);
+      setPinPreview(URL.createObjectURL(blob));
+    } catch (error) {
+      setPinError(error instanceof Error ? error.message : "Could not generate the Pin image.");
+    } finally {
+      setGeneratingPin(false);
+    }
   };
+
+  const downloadPin = () => {
+    if (!pinPreview) return;
+    const filename = `${(photo.title || "still-frames").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-pinterest.png`;
+    const link = document.createElement("a");
+    link.href = pinPreview;
+    link.download = filename;
+    link.click();
+  };
+
+  const openPinterestPublisher = () => window.open("https://www.pinterest.com/pin-builder/", "_blank", "noopener,noreferrer");
 
   const handleCopyCopy = async () => {
     const copy = `Title: ${pinTitle}\n\nDescription:\n${pinDesc}\n\nLink: ${targetUrl}`;
@@ -242,6 +336,24 @@ function PinterestPinModal({ photo, onClose }: { photo: Photo; onClose: () => vo
           </div>
         </div>
 
+        <div className="rounded-xl border border-border bg-paper-alt/50 p-3">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <p className="text-xs font-semibold text-ink">Vertical Pin image</p>
+              <p className="text-[0.7rem] text-ink-muted mt-0.5">1000 × 1500 PNG with the photograph and archive details.</p>
+            </div>
+            <button
+              onClick={generatePin}
+              disabled={generatingPin}
+              className="shrink-0 px-3 py-2 rounded-lg bg-ink text-paper text-xs font-semibold hover:bg-ink-light disabled:opacity-60 flex items-center gap-1.5"
+            >
+              {generatingPin ? <><Loader2 size={13} className="animate-spin" /> Creating</> : <><Images size={13} /> Create image</>}
+            </button>
+          </div>
+          {pinPreview && <img src={pinPreview} alt="Generated vertical Pinterest Pin" className="w-32 mx-auto rounded-md shadow-sm border border-border" />}
+          {pinError && <p className="text-xs text-red-600 mt-2">{pinError}</p>}
+        </div>
+
         {/* SEO Title Input */}
         <div>
           <label className="block text-xs font-semibold text-ink mb-1">
@@ -269,20 +381,24 @@ function PinterestPinModal({ photo, onClose }: { photo: Photo; onClose: () => vo
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-2 pt-2 border-t border-border">
+        <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
           <button
             onClick={handleCopyCopy}
             className="flex-1 py-2.5 px-4 rounded-xl border border-border bg-paper-alt text-ink font-sans text-xs font-semibold hover:bg-paper transition-colors"
           >
             {copied ? "Copied to Clipboard!" : "Copy SEO Text"}
           </button>
+          <button onClick={downloadPin} disabled={!pinPreview} className="flex-1 py-2.5 px-4 rounded-xl bg-accent text-white font-sans text-xs font-semibold disabled:opacity-40 hover:opacity-90 transition-colors flex items-center justify-center gap-1.5">
+            <Download size={14} /> Download Pin
+          </button>
           <button
-            onClick={handlePinNow}
+            onClick={openPinterestPublisher}
             className="flex-1 py-2.5 px-4 rounded-xl bg-red-600 text-white font-sans text-xs font-semibold hover:bg-red-700 transition-colors shadow-md flex items-center justify-center gap-1.5"
           >
-            📌 Pin Now on Pinterest
+            📌 Open Pinterest
           </button>
         </div>
+        <p className="text-[0.68rem] text-ink-muted -mt-2">Download the generated image, then upload it in Pinterest and paste the title, description, and destination link above.</p>
       </div>
     </div>
   );

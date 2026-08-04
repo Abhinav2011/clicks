@@ -25,7 +25,7 @@ The browser creates the two JPEG derivatives before uploading. This keeps the 15
 [
   {
     "AllowedOrigins": ["http://localhost:3000", "https://your-site.example.com"],
-    "AllowedMethods": ["PUT"],
+    "AllowedMethods": ["GET", "PUT"],
     "AllowedHeaders": ["content-type", "cache-control"],
     "ExposeHeaders": ["etag"],
     "MaxAgeSeconds": 3600
