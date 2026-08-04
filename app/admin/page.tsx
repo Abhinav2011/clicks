@@ -181,13 +181,19 @@ function PhotoCard({ item, index, onChange, onRemove }: {
 }
 
 // ─── Pinterest Pin Generator Modal ─────────────────────────────────────────────
-function loadCanvasImage(source: string) {
+async function loadCanvasImage(photoId: string, passkey: string) {
+  const response = await fetch("/api/admin/pin-source", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-admin-passkey": passkey },
+    body: JSON.stringify({ id: photoId }),
+  });
+  if (!response.ok) throw new Error("Could not load the photo for the Pin image.");
+  const objectUrl = URL.createObjectURL(await response.blob());
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new window.Image();
-    image.crossOrigin = "anonymous";
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("Could not load the photo for the Pin image."));
-    image.src = source;
+    image.onload = () => { URL.revokeObjectURL(objectUrl); resolve(image); };
+    image.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("Could not decode the photo for the Pin image.")); };
+    image.src = objectUrl;
   });
 }
 
@@ -214,7 +220,7 @@ function drawWrappedText(context: CanvasRenderingContext2D, text: string, x: num
   return currentY;
 }
 
-function PinterestPinModal({ photo, onClose }: { photo: Photo; onClose: () => void }) {
+function PinterestPinModal({ photo, passkey, onClose }: { photo: Photo; passkey: string; onClose: () => void }) {
   const defaultTitle = `${photo.title || "Fujifilm Photograph"} — ${photo.film_simulation || "Classic Chrome"} | Still Frames`;
   const simClean = (photo.film_simulation || "classicchrome").toLowerCase().replace(/[^a-z0-9]/g, "");
   const locClean = (photo.location || "india").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -239,7 +245,7 @@ function PinterestPinModal({ photo, onClose }: { photo: Photo; onClose: () => vo
     setGeneratingPin(true);
     setPinError("");
     try {
-      const image = await loadCanvasImage(imageUrl);
+      const image = await loadCanvasImage(photo.id, passkey);
       const canvas = document.createElement("canvas");
       canvas.width = 1000;
       canvas.height = 1500;
@@ -602,7 +608,7 @@ function ManagePanel({ passkey }: { passkey: string }) {
 
       {/* Pinterest Pin Generator Modal */}
       {pinModalPhoto && (
-        <PinterestPinModal photo={pinModalPhoto} onClose={() => setPinModalPhoto(null)} />
+        <PinterestPinModal photo={pinModalPhoto} passkey={passkey} onClose={() => setPinModalPhoto(null)} />
       )}
 
       {/* Confirm Delete Dialog */}
